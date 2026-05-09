@@ -1,13 +1,13 @@
 export const CAT_STYLES = {
-  sleeping:    { fill: '#FAECE7', stroke: '#D85A30' },
-  bathroom:    { fill: '#F0EBF8', stroke: '#8B5CF6' },
-  work:        { fill: '#EEEDFE', stroke: '#534AB7' },
-  social:      { fill: '#E1F5EE', stroke: '#1D9E75' },
-  outdoor:     { fill: '#EAF3DE', stroke: '#639922' },
-  transition:  { fill: '#E8F4F0', stroke: '#2A9D8F' },
-  circulation: { fill: '#FAEEDA', stroke: '#BA7517' },
-  service:     { fill: '#F1EFE8', stroke: '#888780' },
-  furniture:   { fill: '#F7F7F5', stroke: '#AAAAAA' },
+  sleeping:    { fill: '#243121', stroke: '#3e5236' },
+  bathroom:    { fill: '#1f2a30', stroke: '#34464f' },
+  work:        { fill: '#2a2435', stroke: '#4a3f6a' },
+  social:      { fill: '#3a2f1a', stroke: '#5a4a28' },
+  outdoor:     { fill: '#27321f', stroke: '#3e4f30' },
+  transition:  { fill: '#252830', stroke: '#3a4050' },
+  circulation: { fill: '#2a2418', stroke: '#4a3c24' },
+  service:     { fill: '#3f2c18', stroke: '#6a4a26' },
+  furniture:   { fill: '#282420', stroke: '#4a3e30' },
 };
 
 const defs = [

@@ -18,15 +18,15 @@ export default function BlockLayer({ stageRef }) {
   const BW = BLOCK.widthM * scale;
   const BD = BLOCK.depthM * scale;
 
-  const blockFill    = isDark ? '#2a2926' : '#F6F4EF';
-  const rulerFill    = isDark ? '#222220' : '#E8E6E0';
-  const rulerTick    = isDark ? '#666' : '#AAA';
-  const labelColor   = isDark ? '#9c9a92' : '#5f5e5a';
-  const setbackFill  = isDark ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)';
-  const setbackStroke = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.2)';
-  const gridColor    = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
-  const pwColor      = '#e24b4a';
-  const edgeLabelColor = isDark ? '#6e6d67' : '#9c9a92';
+  const blockFill    = isDark ? '#221d18' : '#ede8de';
+  const rulerFill    = isDark ? '#1a1612' : '#e4ddd2';
+  const rulerTick    = isDark ? '#46392e' : '#9c9288';
+  const labelColor   = isDark ? '#b6ab93' : '#5c5248';
+  const setbackFill  = isDark ? 'rgba(0,0,0,0.30)' : 'rgba(0,0,0,0.06)';
+  const setbackStroke = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.18)';
+  const gridColor    = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.07)';
+  const pwColor      = '#e58a7a';
+  const edgeLabelColor = isDark ? '#7c7160' : '#9c9288';
 
   const { setbacks } = BLOCK;
   // buildable envelope in pixels relative to BX, BY

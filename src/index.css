@@ -1,33 +1,74 @@
 @import "tailwindcss";
 
+/* ── Warm dark tokens ──────────────────────────────────────────────── */
 :root {
-  --bg: #1c1c1a;
-  --bg2: #252523;
-  --bg3: #2e2e2b;
-  --tx: #e8e6de;
-  --tx2: #9c9a92;
-  --tx3: #6e6d67;
-  --bd: rgba(255,255,255,0.1);
-  --bd2: rgba(255,255,255,0.2);
-  --green: #1d9e75;
-  --red: #e24b4a;
-  --accent: #534AB7;
+  /* surfaces */
+  --bg:    #1a1612;
+  --bg-1:  #221d18;
+  --bg-2:  #2c2620;
+  /* legacy aliases kept so existing inline styles still work */
+  --bg2:   #221d18;
+  --bg3:   #2c2620;
+
+  /* text */
+  --tx:    #f1ead9;
+  --tx-2:  #b6ab93;
+  --tx-3:  #7c7160;
+  /* legacy aliases */
+  --tx2:   #b6ab93;
+  --tx3:   #7c7160;
+
+  /* dividers */
+  --bd:    #332c24;
+  --bd-2:  #46392e;
+  /* legacy aliases */
+  --bd2:   #46392e;
+
+  /* brand / status */
+  --accent:    #e0825a;
+  --accent-2:  #9bbf8a;
+  --green:     #9bbf8a;
+  --amber:     #e0a85a;
+  --red:       #e58a7a;
+
+  /* room categories (Konva fills + strokes — documented here for reference) */
+  --cat-living-fill:    #3a2f1a;  --cat-living-stroke:    #5a4a28;
+  --cat-cooking-fill:   #3f2c18;  --cat-cooking-stroke:   #6a4a26;
+  --cat-sleeping-fill:  #243121;  --cat-sleeping-stroke:  #3e5236;
+  --cat-wet-fill:       #1f2a30;  --cat-wet-stroke:       #34464f;
+  --cat-outdoor-fill:   #27321f;  --cat-outdoor-stroke:   #3e4f30;
+
+  /* radii */
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 12px;
+  --hairline:  1px solid var(--bd);
+
+  /* type stacks */
+  --font-sans:  'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
+/* ── Light override ────────────────────────────────────────────────── */
 .light {
-  --bg: #ffffff;
-  --bg2: #f5f4f0;
-  --bg3: #eeecea;
-  --tx: #1a1a18;
-  --tx2: #5f5e5a;
-  --tx3: #9c9a92;
-  --bd: rgba(0,0,0,0.1);
-  --bd2: rgba(0,0,0,0.2);
+  --bg:    #f5f0e8;
+  --bg-1:  #ede8de;
+  --bg-2:  #e4ddd2;
+  --bg2:   #ede8de;
+  --bg3:   #e4ddd2;
+  --tx:    #1c1814;
+  --tx-2:  #5c5248;
+  --tx-3:  #9c9288;
+  --tx2:   #5c5248;
+  --tx3:   #9c9288;
+  --bd:    rgba(0,0,0,0.12);
+  --bd-2:  rgba(0,0,0,0.20);
+  --bd2:   rgba(0,0,0,0.20);
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+/* ── Reset ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body, #root {
   height: 100%;
@@ -36,30 +77,81 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* ── Base ──────────────────────────────────────────────────────────── */
+html, body { background: var(--bg); color: var(--tx); }
+
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px;
-  background: var(--bg);
-  color: var(--tx);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg2); }
-::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+.serif { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+.mono  { font-family: var(--font-mono); font-feature-settings: "tnum","zero"; }
+.num   { font-variant-numeric: tabular-nums; }
 
+/* ── Scrollbars ────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-1); }
+::-webkit-scrollbar-thumb { background: var(--bd-2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #5a4a3c; }
+
+/* ── Form controls ─────────────────────────────────────────────────── */
 input, textarea, select {
-  background: var(--bg3);
+  background: var(--bg-1);
   color: var(--tx);
-  border: 1px solid var(--bd2);
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: inherit;
+  border: 1px solid var(--bd-2);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 13px;
+  padding: 0 12px;
+  height: 34px;
 }
+textarea { padding: 9px 12px; height: auto; min-height: 60px; }
+
 input:focus, textarea:focus, select:focus {
-  outline: 1px solid var(--accent);
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(224,130,90,.18);
 }
 
-button {
-  cursor: pointer;
-  font-family: inherit;
+button { cursor: pointer; font-family: inherit; }
+
+/* ── Priority chips ────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 9px;
+  border-radius: 11px; font-size: 10px; font-weight: 500; letter-spacing: .04em;
+  text-transform: uppercase; border: 1px solid transparent; background: transparent;
+  color: var(--tx-3);
 }
+.chip--essential.on { background: rgba(224,130,90,.16); color: var(--accent); }
+.chip--desired.on   { background: var(--bg-2);          color: var(--tx-2); }
+.chip--optional.on  { border-color: var(--bd-2);        color: var(--tx-3); }
+
+/* ── Panel primitive ───────────────────────────────────────────────── */
+.pn { border-bottom: var(--hairline); }
+.pn-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px 10px 8px;
+  width: 100%; background: transparent; border: none;
+  color: var(--tx); cursor: grab; user-select: none;
+}
+.pn-head:hover { background: var(--bg-1); }
+.pn-head:active { cursor: grabbing; }
+.pn-grip {
+  width: 14px;
+  display: grid; grid-template-columns: repeat(2, 3px); grid-template-rows: repeat(3, 3px);
+  gap: 2px; opacity: .45; flex-shrink: 0;
+}
+.pn-grip i { background: var(--tx-3); border-radius: 50%; display: block; width: 3px; height: 3px; }
+.pn-lab {
+  flex: 1; text-align: left;
+  font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--tx-2);
+}
+.pn-meta { font-size: 11px; color: var(--tx-3); margin-right: 4px; }
+.pn-chev { color: var(--tx-3); transition: transform .2s ease; }
+.pn[data-collapsed="true"] .pn-chev { transform: rotate(-90deg); }
+.pn[data-collapsed="true"] .pn-body { display: none; }
+.pn-dragging { background: var(--bg-2); box-shadow: 0 8px 24px rgba(0,0,0,.5); position: relative; z-index: 2; }

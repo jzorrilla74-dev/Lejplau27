@@ -170,17 +170,18 @@ export default function RoomLayer({ stageRef }) {
               {showLabel && (
                 <>
                   <Text
-                    x={4} y={pd / 2 - 12}
+                    x={4} y={pd / 2 - 14}
                     width={pw - 8} text={room.label}
-                    fontSize={Math.min(11, pw / 5)}
-                    fill="#1a1a18" align="center" listening={false}
+                    fontSize={Math.min(13, pw / 5)}
+                    fill="#f1ead9" align="center" listening={false}
                   />
                   <Text
-                    x={4} y={pd / 2}
+                    x={4} y={pd / 2 + 2}
                     width={pw - 8}
                     text={`${room.w}×${room.d}m`}
-                    fontSize={Math.min(9, pw / 7)}
-                    fill="#5f5e5a" align="center" listening={false}
+                    fontSize={Math.min(11, pw / 7)}
+                    fontFamily="'JetBrains Mono', monospace"
+                    fill="#b6ab93" align="center" listening={false}
                   />
                 </>
               )}
