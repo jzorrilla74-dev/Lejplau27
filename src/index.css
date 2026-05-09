@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #1c1c1a;
+  --bg2: #252523;
+  --bg3: #2e2e2b;
+  --tx: #e8e6de;
+  --tx2: #9c9a92;
+  --tx3: #6e6d67;
+  --bd: rgba(255,255,255,0.1);
+  --bd2: rgba(255,255,255,0.2);
+  --green: #1d9e75;
+  --red: #e24b4a;
+  --accent: #534AB7;
+}
+
+.light {
+  --bg: #ffffff;
+  --bg2: #f5f4f0;
+  --bg3: #eeecea;
+  --tx: #1a1a18;
+  --tx2: #5f5e5a;
+  --tx3: #9c9a92;
+  --bd: rgba(0,0,0,0.1);
+  --bd2: rgba(0,0,0,0.2);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--tx);
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+
+input, textarea, select {
+  background: var(--bg3);
+  color: var(--tx);
+  border: 1px solid var(--bd2);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+}
+input:focus, textarea:focus, select:focus {
+  outline: 1px solid var(--accent);
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
