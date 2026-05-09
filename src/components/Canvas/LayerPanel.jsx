@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
+import { Eye, EyeOff, Lock, Unlock, Trash2, X } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
+
+const ICON = { size: 12, strokeWidth: 1.6 };
 
 export default function LayerPanel({ onClose }) {
   const { layers, activeLayerId, dispatch } = useLayers();
@@ -8,13 +11,15 @@ export default function LayerPanel({ onClose }) {
   return (
     <div style={{
       position: 'absolute', top: 36, right: 0,
-      width: 220, background: 'var(--bg2)',
-      border: '1px solid var(--bd2)', borderRadius: 4,
-      zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+      width: 230, background: 'var(--bg-1)',
+      border: '1px solid var(--bd-2)', borderRadius: 6,
+      zIndex: 50, boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
     }}>
-      <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--bd)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx)' }}>Layers</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14 }}>✕</button>
+      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--bd)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--tx-2)' }}>Layers</span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--tx-3)', cursor: 'pointer', display: 'flex', padding: 2 }}>
+          <X {...ICON} />
+        </button>
       </div>
 
       <div style={{ maxHeight: 300, overflowY: 'auto' }}>
@@ -23,26 +28,28 @@ export default function LayerPanel({ onClose }) {
             key={layer.id}
             onClick={() => dispatch({ type: 'SET_ACTIVE', id: layer.id })}
             style={{
-              display: 'flex', alignItems: 'center', gap: 4, padding: '5px 8px',
-              background: activeLayerId === layer.id ? 'rgba(83,74,183,0.15)' : 'transparent',
+              display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px',
+              background: activeLayerId === layer.id ? 'rgba(224,130,90,0.10)' : 'transparent',
               borderLeft: activeLayerId === layer.id ? '2px solid var(--accent)' : '2px solid transparent',
               cursor: 'pointer',
             }}>
-            {/* eye toggle */}
-            <button onClick={e => { e.stopPropagation(); dispatch({ type: 'TOGGLE_VISIBLE', id: layer.id }); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, opacity: layer.visible ? 1 : 0.3, padding: 0 }}
+            {/* visibility */}
+            <button
+              onClick={e => { e.stopPropagation(); dispatch({ type: 'TOGGLE_VISIBLE', id: layer.id }); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: layer.visible ? 'var(--tx-2)' : 'var(--tx-3)', display: 'flex' }}
               title="Toggle visibility">
-              👁
+              {layer.visible ? <Eye {...ICON} /> : <EyeOff {...ICON} />}
             </button>
 
-            {/* lock toggle */}
-            <button onClick={e => { e.stopPropagation(); dispatch({ type: 'TOGGLE_LOCKED', id: layer.id }); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, opacity: layer.locked ? 1 : 0.3, padding: 0 }}
+            {/* lock */}
+            <button
+              onClick={e => { e.stopPropagation(); dispatch({ type: 'TOGGLE_LOCKED', id: layer.id }); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: layer.locked ? 'var(--accent)' : 'var(--tx-3)', display: 'flex' }}
               title="Toggle lock">
-              🔒
+              {layer.locked ? <Lock {...ICON} /> : <Unlock {...ICON} />}
             </button>
 
-            {/* name — double-click to rename */}
+            {/* name */}
             <span
               style={{ flex: 1, fontSize: 11, color: 'var(--tx)' }}
               onDoubleClick={e => {
@@ -59,7 +66,7 @@ export default function LayerPanel({ onClose }) {
               value={Math.round(layer.opacity * 100)}
               onClick={e => e.stopPropagation()}
               onChange={e => dispatch({ type: 'SET_OPACITY', id: layer.id, opacity: e.target.value / 100 })}
-              style={{ width: 50 }}
+              style={{ width: 48, height: 4, accentColor: 'var(--accent)' }}
             />
           </div>
         ))}
@@ -68,7 +75,7 @@ export default function LayerPanel({ onClose }) {
       <div style={{ padding: '6px 8px', borderTop: '1px solid var(--bd)', display: 'flex', gap: 4 }}>
         <button
           onClick={() => dispatch({ type: 'ADD_LAYER', id: uuidv4(), name: `Layer ${layers.length + 1}` })}
-          style={{ flex: 1, padding: '4px 0', fontSize: 10, background: 'var(--bg3)', border: '1px solid var(--bd2)', borderRadius: 3, color: 'var(--tx)', cursor: 'pointer' }}>
+          style={{ flex: 1, padding: '4px 0', fontSize: 10, background: 'var(--bg-2)', border: '1px solid var(--bd-2)', borderRadius: 4, color: 'var(--tx-2)', cursor: 'pointer' }}>
           + New layer
         </button>
         <button
@@ -77,8 +84,8 @@ export default function LayerPanel({ onClose }) {
             if (!active || active.locked) return;
             dispatch({ type: 'REMOVE_LAYER', id: activeLayerId });
           }}
-          style={{ padding: '4px 8px', fontSize: 10, background: 'rgba(226,75,74,0.15)', border: '1px solid rgba(226,75,74,0.3)', borderRadius: 3, color: 'var(--red)', cursor: 'pointer' }}>
-          🗑
+          style={{ padding: '4px 8px', background: 'rgba(229,138,122,0.12)', border: '1px solid rgba(229,138,122,0.25)', borderRadius: 4, color: 'var(--red)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          <Trash2 size={12} strokeWidth={1.6} />
         </button>
       </div>
     </div>

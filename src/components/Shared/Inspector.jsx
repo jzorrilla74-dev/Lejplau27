@@ -1,3 +1,4 @@
+import { Lock, Unlock } from 'lucide-react';
 import { useCanvas } from '../../context/CanvasContext';
 import { useLayout } from '../../context/LayoutContext';
 import { useLayers } from '../../context/LayerContext';
@@ -20,87 +21,105 @@ export default function Inspector() {
 
   const area = (room.w * room.d).toFixed(1);
 
-  const fieldStyle = {
-    width: '100%', padding: '3px 5px', marginBottom: 4,
-    background: 'var(--bg3)', border: '1px solid var(--bd2)',
-    borderRadius: 3, color: 'var(--tx)', fontSize: 11,
+  const field = {
+    width: '100%', padding: '0 10px', marginBottom: 4, height: 34,
+    background: 'var(--bg-1)', border: '1px solid var(--bd-2)',
+    borderRadius: 'var(--radius)', color: 'var(--tx)', fontSize: 13,
   };
-  const labelStyle = { fontSize: 10, color: 'var(--tx2)', marginBottom: 2, display: 'block' };
+  const lbl = { fontSize: 11, color: 'var(--tx-3)', marginBottom: 3, display: 'block',
+    fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase' };
 
   return (
-    <div style={{ padding: 8, borderTop: '1px solid var(--bd)', background: 'var(--bg2)' }}>
-      <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6, color: 'var(--tx)' }}>Inspector</div>
+    <div style={{ padding: '10px 14px', borderTop: '1px solid var(--bd)', background: 'var(--bg-1)' }}>
+      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--tx-2)', marginBottom: 8 }}>Inspector</div>
 
-      <label style={labelStyle}>Label</label>
-      <input style={fieldStyle} value={room.label} onChange={e => update({ label: e.target.value })} />
+      <label style={lbl}>Label</label>
+      <input style={field} value={room.label} onChange={e => update({ label: e.target.value })} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 4 }}>
         <div>
-          <label style={labelStyle}>Width (m)</label>
-          <input style={fieldStyle} type="number" step="0.5" min="0.5" value={room.w}
+          <label style={lbl}>W (m)</label>
+          <input style={{ ...field, marginBottom: 0 }} type="number" step="0.5" min="0.5" value={room.w}
             onChange={e => update({ w: Math.max(0.5, parseFloat(e.target.value) || 0.5) })} />
         </div>
         <div>
-          <label style={labelStyle}>Depth (m)</label>
-          <input style={fieldStyle} type="number" step="0.5" min="0.5" value={room.d}
+          <label style={lbl}>D (m)</label>
+          <input style={{ ...field, marginBottom: 0 }} type="number" step="0.5" min="0.5" value={room.d}
             onChange={e => update({ d: Math.max(0.5, parseFloat(e.target.value) || 0.5) })} />
         </div>
       </div>
 
-      <label style={labelStyle}>Area: <span style={{ color: 'var(--tx)' }}>{area} m²</span></label>
+      <div style={{ fontSize: 11, color: 'var(--tx-3)', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
+        {room.w} × {room.d} m · <span style={{ color: 'var(--accent)' }}>{area} m²</span>
+      </div>
 
-      <label style={labelStyle}>Rotation</label>
-      <div style={{ display: 'flex', gap: 3, marginBottom: 4 }}>
+      <label style={lbl}>Rotation</label>
+      <div style={{ display: 'flex', gap: 2, marginBottom: 8, background: 'var(--bg-2)', borderRadius: 6, padding: 2 }}>
         {[0, 90, 180, 270].map(deg => (
           <button key={deg}
             onClick={() => update({ rotation: deg })}
             style={{
-              flex: 1, padding: '3px 0', fontSize: 10,
-              background: room.rotation === deg ? 'var(--accent)' : 'var(--bg3)',
-              border: '1px solid var(--bd2)', borderRadius: 3, color: 'var(--tx)', cursor: 'pointer',
+              flex: 1, padding: '4px 0', fontSize: 10,
+              background: room.rotation === deg ? 'var(--bg-1)' : 'transparent',
+              boxShadow: room.rotation === deg ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+              border: 'none', borderRadius: 4, color: room.rotation === deg ? 'var(--tx)' : 'var(--tx-3)', cursor: 'pointer',
             }}>
             {deg}°
           </button>
         ))}
       </div>
 
-      <label style={labelStyle}>Category</label>
-      <select style={fieldStyle} value={room.category} onChange={e => update({ category: e.target.value })}>
+      <label style={lbl}>Category</label>
+      <select style={{ ...field, marginBottom: 8 }} value={room.category} onChange={e => update({ category: e.target.value })}>
         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
       </select>
 
-      <label style={labelStyle}>Layer</label>
-      <select style={fieldStyle} value={room.layerId} onChange={e => update({ layerId: e.target.value })}>
+      <label style={lbl}>Layer</label>
+      <select style={{ ...field, marginBottom: 8 }} value={room.layerId} onChange={e => update({ layerId: e.target.value })}>
         {layers.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
       </select>
 
-      <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
-        <button
-          onClick={() => update({ locked: !room.locked })}
-          style={{
-            flex: 1, padding: '4px 0', fontSize: 10,
-            background: room.locked ? 'var(--accent)' : 'var(--bg3)',
-            border: '1px solid var(--bd2)', borderRadius: 3, color: 'var(--tx)', cursor: 'pointer',
-          }}>
-          {room.locked ? '🔒 Locked' : '🔓 Unlocked'}
-        </button>
-      </div>
+      <button
+        onClick={() => update({ locked: !room.locked })}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '5px 10px', fontSize: 11, marginBottom: 8,
+          background: room.locked ? 'rgba(224,130,90,0.12)' : 'var(--bg-2)',
+          border: `1px solid ${room.locked ? 'var(--accent)' : 'var(--bd-2)'}`,
+          borderRadius: 4, color: room.locked ? 'var(--accent)' : 'var(--tx-2)', cursor: 'pointer',
+        }}>
+        {room.locked
+          ? <><Lock size={12} strokeWidth={1.6} /> Locked</>
+          : <><Unlock size={12} strokeWidth={1.6} /> Unlocked</>}
+      </button>
 
-      <label style={labelStyle}>Notes</label>
-      <textarea style={{ ...fieldStyle, resize: 'vertical', minHeight: 40 }}
+      <label style={lbl}>Notes</label>
+      <textarea style={{ ...field, height: 'auto', minHeight: 48, padding: '8px 10px', resize: 'vertical', marginBottom: 10 }}
         value={room.notes} onChange={e => update({ notes: e.target.value })} />
 
+      {/* Ghost remove button */}
       <button
         onClick={() => {
           lDispatch({ type: 'REMOVE_ROOM', uid: room.uid });
           cDispatch({ type: 'DESELECT' });
         }}
         style={{
-          width: '100%', padding: '5px 0', fontSize: 11,
-          background: 'var(--red)', border: 'none', borderRadius: 3,
-          color: 'white', cursor: 'pointer', marginTop: 4,
+          width: '100%', padding: '6px 0', fontSize: 11,
+          background: 'transparent', border: '1px solid var(--bd-2)',
+          borderRadius: 4, color: 'var(--tx-2)', cursor: 'pointer',
+          transition: 'color .15s, border-color .15s, background .15s',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.color = 'var(--red)';
+          e.currentTarget.style.borderColor = 'var(--red)';
+          e.currentTarget.style.background = 'rgba(229,138,122,0.08)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.color = 'var(--tx-2)';
+          e.currentTarget.style.borderColor = 'var(--bd-2)';
+          e.currentTarget.style.background = 'transparent';
         }}>
-        Remove Room
+        Remove room
       </button>
     </div>
   );

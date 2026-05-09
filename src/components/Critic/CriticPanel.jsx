@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Settings, ThumbsUp, ThumbsDown, SendHorizontal } from 'lucide-react';
 import { useCritic } from '../../context/CriticContext';
 import { useLayout } from '../../context/LayoutContext';
 import { useLayers } from '../../context/LayerContext';
@@ -88,7 +89,7 @@ export default function CriticPanel() {
       <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--bd)', display: 'flex', alignItems: 'center', background: 'var(--bg3)' }}>
         <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: 'var(--tx)' }}>Design Critic</span>
         <button onClick={() => dispatch({ type: 'CLEAR_MESSAGES' })} style={{ fontSize: 9, color: 'var(--tx3)', background: 'none', border: 'none', cursor: 'pointer', marginRight: 6 }}>Clear</button>
-        <button onClick={() => setShowKeyModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', fontSize: 14 }} title="API settings">⚙</button>
+        <button onClick={() => setShowKeyModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', display: 'flex' }} title="API settings"><Settings size={14} strokeWidth={1.6} /></button>
       </div>
 
       {/* action buttons */}
@@ -126,8 +127,8 @@ export default function CriticPanel() {
           style={{ flex: 1, padding: '4px 6px', fontSize: 11 }}
         />
         <button onClick={handleSend} disabled={loading || !question.trim()}
-          style={{ padding: '4px 8px', background: 'var(--accent)', border: 'none', borderRadius: 4, color: 'white', fontSize: 11, cursor: 'pointer' }}>
-          →
+          style={{ padding: '4px 8px', background: 'var(--accent)', border: 'none', borderRadius: 4, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          <SendHorizontal size={14} strokeWidth={1.6} />
         </button>
       </div>
 
@@ -155,8 +156,8 @@ export default function CriticPanel() {
             </div>
             {msg.role === 'critic' && msg.content && (
               <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                <button style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', color: 'var(--tx3)' }} title="Helpful">👍</button>
-                <button style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', color: 'var(--tx3)' }} title="Not helpful">👎</button>
+                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', display: 'flex', padding: 2 }} title="Helpful"><ThumbsUp size={12} strokeWidth={1.6} /></button>
+                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', display: 'flex', padding: 2 }} title="Not helpful"><ThumbsDown size={12} strokeWidth={1.6} /></button>
               </div>
             )}
           </div>
