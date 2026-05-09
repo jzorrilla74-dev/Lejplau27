@@ -8,6 +8,7 @@ export const CAT_STYLES = {
   circulation: { fill: '#2a2418', stroke: '#4a3c24' },
   service:     { fill: '#3f2c18', stroke: '#6a4a26' },
   furniture:   { fill: '#282420', stroke: '#4a3e30' },
+  structural:  { fill: '#3a3a3a', stroke: '#555555' },
 };
 
 const defs = [
@@ -115,6 +116,11 @@ const defs = [
   { defId: 'bbq',               label: 'BBQ',             w: 1.20, d: 0.60, category: 'furniture' },
   { defId: 'pot_large',         label: 'Pot Large',       w: 0.60, d: 0.60, category: 'furniture' },
   { defId: 'pot_small',         label: 'Pot Small',       w: 0.40, d: 0.40, category: 'furniture' },
+  // structural
+  { defId: 'wall',              label: 'Wall',            w: 0.20, d: 3.00, category: 'structural' },
+  { defId: 'party_wall',        label: 'Party Wall',      w: 0.20, d: 8.25, category: 'structural' },
+  { defId: 'column',            label: 'Column',          w: 0.30, d: 0.30, category: 'structural' },
+  { defId: 'beam',              label: 'Beam',            w: 0.20, d: 4.00, category: 'structural' },
 ];
 
 export const ROOM_DEFS = Object.fromEntries(defs.map(d => [d.defId, d]));
@@ -129,4 +135,5 @@ export const ROOM_GROUPS = [
   { id: 'circulation', label: 'Circulation', defs: defs.filter(d => d.category === 'circulation') },
   { id: 'service',     label: 'Service',     defs: defs.filter(d => d.category === 'service') },
   { id: 'furniture',   label: 'Furniture',   defs: defs.filter(d => d.category === 'furniture') },
+  { id: 'structural',  label: 'Structural',  defs: defs.filter(d => d.category === 'structural') },
 ];

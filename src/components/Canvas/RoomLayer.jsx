@@ -29,7 +29,7 @@ function clamp(val, min, max) {
 }
 
 export default function RoomLayer({ stageRef }) {
-  const { scale, selectedUid, dispatch: cDispatch } = useCanvas();
+  const { scale, selectedUid, theme, dispatch: cDispatch } = useCanvas();
   const { rooms, dispatch: lDispatch } = useLayout();
   const { layers } = useLayers();
   const shiftRef = useRef(false);
@@ -59,8 +59,31 @@ export default function RoomLayer({ stageRef }) {
     const node = e.target;
     const grid = (e.evt.shiftKey ? FINE_GRID_M : GRID_M);
     const pos = node.position();
-    const xm = snapTo((pos.x - BX) / scale, grid);
-    const ym = snapTo((pos.y - BY) / scale, grid);
+    let xm = snapTo((pos.x - BX) / scale, grid);
+    let ym = snapTo((pos.y - BY) / scale, grid);
+
+    if (room.category === 'structural') {
+      const SNAP_DIST = 0.15;
+      let bestDx = SNAP_DIST + 1, bestDy = SNAP_DIST + 1;
+      for (const other of rooms) {
+        if (other.uid === room.uid) continue;
+        const edges = [other.x, other.x + other.w];
+        for (const ex of edges) {
+          const d = Math.abs(xm - ex);
+          if (d < bestDx) { bestDx = d; xm = ex; }
+          const d2 = Math.abs(xm + room.w - ex);
+          if (d2 < bestDx) { bestDx = d2; xm = ex - room.w; }
+        }
+        const edgesY = [other.y, other.y + other.d];
+        for (const ey of edgesY) {
+          const d = Math.abs(ym - ey);
+          if (d < bestDy) { bestDy = d; ym = ey; }
+          const d2 = Math.abs(ym + room.d - ey);
+          if (d2 < bestDy) { bestDy = d2; ym = ey - room.d; }
+        }
+      }
+    }
+
     const cx = clamp(xm, ENV.x1, ENV.x2 - room.w);
     const cy = clamp(ym, ENV.y1, ENV.y2 - room.d);
     node.x(BX + cx * scale);
@@ -132,8 +155,10 @@ export default function RoomLayer({ stageRef }) {
           const hasWarning = warnUids.has(room.uid);
           const hasOverlap = overlapUids.has(room.uid);
           const layer = layers.find(l => l.id === room.layerId);
-          const opacity = (layer?.opacity ?? 1) * (room.category === 'furniture' ? 0.7 : 0.93);
+          const isStructural = room.category === 'structural';
           const isFurniture = room.category === 'furniture';
+          const opacity = isStructural ? (layer?.opacity ?? 1) : (layer?.opacity ?? 1) * (isFurniture ? 0.7 : 0.93);
+          const structuralFill = theme === 'dark' ? '#3a3a3a' : '#888888';
 
           const px = BX + room.x * scale;
           const py = BY + room.y * scale;
@@ -160,11 +185,11 @@ export default function RoomLayer({ stageRef }) {
             >
               <Rect
                 width={pw} height={pd}
-                fill={catStyle.fill}
+                fill={isStructural ? structuralFill : catStyle.fill}
                 stroke={strokeColor}
-                strokeWidth={strokeWidth}
+                strokeWidth={isStructural ? 1.5 : strokeWidth}
                 opacity={opacity}
-                cornerRadius={2}
+                cornerRadius={isStructural ? 0 : 2}
                 dash={isFurniture ? [4, 3] : undefined}
               />
               {showLabel && (
