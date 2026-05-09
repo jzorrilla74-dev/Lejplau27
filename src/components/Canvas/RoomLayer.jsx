@@ -20,6 +20,11 @@ const ENV = {
   y2: BLOCK.depthM - BLOCK.setbacks.rear,
 };
 
+function hexAlpha(hex, a) {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  return `rgba(${r},${g},${b},${a})`;
+}
+
 function snapTo(val, grid) {
   return Math.round(val / grid) * grid;
 }
@@ -158,7 +163,7 @@ export default function RoomLayer({ stageRef }) {
     const isFurniture = room.category === 'furniture';
     const isOpening = room.category === 'openings';
     const isSoftscape = room.category === 'softscape';
-    const opacity = isStructural ? (layer?.opacity ?? 1) : (layer?.opacity ?? 1) * (isFurniture ? 0.7 : 0.93);
+    const layerOpacity = layer?.opacity ?? 1;
     const structuralFill = theme === 'dark' ? '#3a3a3a' : '#888888';
 
     const px = BX + room.x * scale;
@@ -188,18 +193,17 @@ export default function RoomLayer({ stageRef }) {
           <Circle
             x={pw / 2} y={pd / 2}
             radius={Math.min(pw, pd) / 2}
-            fill={catStyle.fill}
+            fill={hexAlpha(catStyle.fill, 0.40 * layerOpacity)}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
-            opacity={(layer?.opacity ?? 1) * 0.4}
           />
         ) : (
           <Rect
             width={pw} height={pd}
-            fill={isStructural ? structuralFill : catStyle.fill}
+            fill={isStructural ? structuralFill : hexAlpha(catStyle.fill, 0.10)}
             stroke={strokeColor}
-            strokeWidth={isStructural ? 1.5 : strokeWidth}
-            opacity={opacity}
+            strokeWidth={isStructural ? 1.5 : 1.5}
+            opacity={layerOpacity}
             cornerRadius={isStructural ? 0 : 2}
             dash={isFurniture ? [4, 3] : isOpening ? [2, 2] : undefined}
           />
