@@ -37,7 +37,6 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
   const { scale, selectedUid, theme, dispatch: cDispatch } = useCanvas();
   const { rooms, dispatch: lDispatch } = useLayout();
   const { layers, activeLayerId } = useLayers();
-  const shiftRef = useRef(false);
   const [snapGuides, setSnapGuides] = useState({ x: [], y: [] });
 
   const BX = RULER_PX + MARGIN;
@@ -60,18 +59,20 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
 
   function handleDragStart(e, room) {
     if (room.locked) return e.target.stopDrag();
-    shiftRef.current = e.evt.shiftKey;
     cDispatch({ type: 'SELECT_ROOM', uid: room.uid });
   }
 
   function handleDragMove(e, room) {
     const node = e.target;
     const grid = e.evt.shiftKey ? FINE_GRID_M : GRID_M;
-    const pos = node.position();
-    let xm = snapTo((pos.x - BX) / scale, grid);
-    let ym = snapTo((pos.y - BY) / scale, grid);
+    const pw = room.w * scale;
+    const pd = room.d * scale;
 
-    // snap-to-object edges for ALL rooms
+    // node.x/y is the group CENTER (due to offsetX/offsetY). Subtract half-size to get top-left.
+    let xm = snapTo((node.x() - pw / 2 - BX) / scale, grid);
+    let ym = snapTo((node.y() - pd / 2 - BY) / scale, grid);
+
+    // snap-to-object edges for all rooms
     const guideX = [];
     const guideY = [];
     let bestDx = SNAP_OBJ_DIST + 1;
@@ -97,22 +98,36 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
 
     const cx = clamp(xm, ENV.x1, ENV.x2 - room.w);
     const cy = clamp(ym, ENV.y1, ENV.y2 - room.d);
-    node.x(BX + cx * scale);
-    node.y(BY + cy * scale);
+
+    // Set the CENTER position back (add half-size back)
+    node.x(BX + cx * scale + pw / 2);
+    node.y(BY + cy * scale + pd / 2);
   }
 
   function handleDragEnd(e, room) {
     const node = e.target;
-    const xm = +(Math.round((node.x() - BX) / scale / GRID_M) * GRID_M).toFixed(3);
-    const ym = +(Math.round((node.y() - BY) / scale / GRID_M) * GRID_M).toFixed(3);
+    const pw = room.w * scale;
+    const pd = room.d * scale;
+    // node.x/y is center; subtract half-size to recover top-left
+    const xm = +(Math.round((node.x() - pw / 2 - BX) / scale / GRID_M) * GRID_M).toFixed(3);
+    const ym = +(Math.round((node.y() - pd / 2 - BY) / scale / GRID_M) * GRID_M).toFixed(3);
     lDispatch({ type: 'UPDATE_ROOM', uid: room.uid, patch: { x: xm, y: ym } });
     setSnapGuides({ x: [], y: [] });
+  }
+
+  function isRoomDraggable(room) {
+    return !room.locked && !layers.find(l => l.id === room.layerId)?.locked;
   }
 
   function handleResizeHandle(e, room, handleType) {
     e.cancelBubble = true;
     const stage = stageRef?.current;
     if (!stage) return;
+
+    // Disable group drag for the duration of the resize
+    const roomGroup = e.target.getParent().getParent();
+    if (roomGroup) roomGroup.draggable(false);
+
     const startPos = stage.getPointerPosition();
     const startRoom = { ...room };
 
@@ -148,6 +163,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
     function onUp() {
       stage.off('pointermove', onMove);
       stage.off('pointerup', onUp);
+      if (roomGroup) roomGroup.draggable(isRoomDraggable(room));
     }
 
     stage.on('pointermove', onMove);
@@ -204,16 +220,22 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
       e.cancelBubble = true;
       const stage = stageRef?.current;
       if (!stage) return;
+
+      // Disable group drag for the duration of rotation
+      const roomGroup = e.target.getParent();
+      if (roomGroup) roomGroup.draggable(false);
+
       function onMove(ev) {
         const ptr = stage.getPointerPosition();
         const rawAngle = Math.atan2(ptr.y - cy, ptr.x - cx) * 180 / Math.PI + 90;
         const angle = ((rawAngle % 360) + 360) % 360;
-        const snapped = ev.evt.shiftKey ? angle : Math.round(angle / 45) * 45;
+        const snapped = ev.evt?.shiftKey ? angle : Math.round(angle / 45) * 45;
         lDispatch({ type: 'UPDATE_ROOM', uid: room.uid, patch: { rotation: snapped } });
       }
       function onUp() {
         stage.off('pointermove', onMove);
         stage.off('pointerup', onUp);
+        if (roomGroup) roomGroup.draggable(isRoomDraggable(room));
       }
       stage.on('pointermove', onMove);
       stage.on('pointerup', onUp);
@@ -226,7 +248,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
         offsetX={pw / 2} offsetY={pd / 2}
         rotation={room.rotation ?? 0}
         opacity={layerOpacity}
-        draggable={!room.locked && !layers.find(l => l.id === room.layerId)?.locked}
+        draggable={isRoomDraggable(room)}
         onPointerDown={() => cDispatch({ type: 'SELECT_ROOM', uid: room.uid })}
         onDragStart={e => handleDragStart(e, room)}
         onDragMove={e => handleDragMove(e, room)}
@@ -292,11 +314,13 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
               { id: 'w',  hx: 0,    hy: pd/2 },
             ].map(h => (
               <Group key={h.id}>
+                {/* hit area: use near-zero alpha so Konva registers pointer events */}
                 <Rect
                   x={h.hx - 10} y={h.hy - 10} width={20} height={20}
-                  fill="transparent"
+                  fill="rgba(0,0,0,0.001)"
                   onPointerDown={e => { e.cancelBubble = true; handleResizeHandle(e, room, h.id); }}
                 />
+                {/* visual only */}
                 <Rect
                   x={h.hx - HANDLE_SIZE/2} y={h.hy - HANDLE_SIZE/2}
                   width={HANDLE_SIZE} height={HANDLE_SIZE}
