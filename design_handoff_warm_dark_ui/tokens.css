@@ -1,0 +1,112 @@
+/* LeJplauu — Warm Dark tokens.
+   Replace the contents of :root in src/index.css with this block.
+   Add the Google Fonts <link> to index.html (Inter, Instrument Serif, JetBrains Mono). */
+
+:root {
+  /* surfaces */
+  --bg:    #1a1612;
+  --bg-1:  #221d18;
+  --bg-2:  #2c2620;
+
+  /* text */
+  --tx:    #f1ead9;
+  --tx-2:  #b6ab93;
+  --tx-3:  #7c7160;
+
+  /* dividers */
+  --bd:    #332c24;
+  --bd-2:  #46392e;
+
+  /* brand / status */
+  --accent:    #e0825a;   /* terracotta — primary action, focus, KPI accent */
+  --accent-2:  #9bbf8a;   /* sage — AI / success / secondary */
+  --green:     #9bbf8a;
+  --amber:     #e0a85a;
+  --red:       #e58a7a;
+
+  /* room categories (Konva fills + strokes) */
+  --cat-living-fill:    #3a2f1a;  --cat-living-stroke:    #5a4a28;
+  --cat-cooking-fill:   #3f2c18;  --cat-cooking-stroke:   #6a4a26;
+  --cat-sleeping-fill:  #243121;  --cat-sleeping-stroke:  #3e5236;
+  --cat-wet-fill:       #1f2a30;  --cat-wet-stroke:       #34464f;
+  --cat-outdoor-fill:   #27321f;  --cat-outdoor-stroke:   #3e4f30;
+
+  /* misc */
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 12px;
+  --hairline:  1px solid var(--bd);
+
+  /* type stacks */
+  --font-sans:  'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+html, body { background: var(--bg); color: var(--tx); }
+body { font-family: var(--font-sans); font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.serif { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+.mono  { font-family: var(--font-mono); font-feature-settings: "tnum","zero"; }
+.num   { font-variant-numeric: tabular-nums; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-1); }
+::-webkit-scrollbar-thumb { background: var(--bd-2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #5a4a3c; }
+
+input, textarea, select {
+  background: var(--bg-1);
+  color: var(--tx);
+  border: 1px solid var(--bd-2);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 13px;
+  padding: 0 12px;
+  height: 34px;
+}
+textarea { padding: 9px 12px; height: auto; min-height: 60px; }
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(224,130,90,.18);
+}
+
+button { cursor: pointer; font: inherit; }
+
+/* Chips */
+.chip {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 9px;
+  border-radius: 11px; font-size: 10px; font-weight: 500; letter-spacing: .04em;
+  text-transform: uppercase; border: 1px solid transparent; background: transparent;
+  color: var(--tx-3);
+}
+.chip--essential.on { background: rgba(224,130,90,.16); color: var(--accent); }
+.chip--desired.on   { background: var(--bg-2);          color: var(--tx-2); }
+.chip--optional.on  { border-color: var(--bd-2);        color: var(--tx-3); }
+
+/* Panel primitive */
+.pn { border-bottom: var(--hairline); }
+.pn-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px 10px 8px;
+  width: 100%; background: transparent; border: none;
+  color: var(--tx); cursor: grab; user-select: none;
+}
+.pn-head:hover { background: var(--bg-1); }
+.pn-head:active { cursor: grabbing; }
+.pn-grip {
+  width: 14px;
+  display: grid; grid-template-columns: repeat(2, 3px); grid-template-rows: repeat(3, 3px);
+  gap: 2px; opacity: .45; flex-shrink: 0;
+}
+.pn-grip i { background: var(--tx-3); border-radius: 50%; display: block; width: 3px; height: 3px; }
+.pn-lab {
+  flex: 1; text-align: left;
+  font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--tx-2);
+}
+.pn-meta { font-size: 11px; color: var(--tx-3); margin-right: 4px; }
+.pn-chev { color: var(--tx-3); transition: transform .2s ease; }
+.pn[data-collapsed="true"] .pn-chev { transform: rotate(-90deg); }
+.pn[data-collapsed="true"] .pn-body { display: none; }
+.pn-dragging { background: var(--bg-2); box-shadow: 0 8px 24px rgba(0,0,0,.5); position: relative; z-index: 2; }

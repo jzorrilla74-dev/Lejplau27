@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LeJplauu — UI redesign explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#f4f3ee; font-family: Inter, system-ui, sans-serif; }
+  /* shared mock-app reset */
+  .app { font-family: inherit; -webkit-font-smoothing: antialiased; }
+  .app * { box-sizing: border-box; }
+  /* SVG icon sizing */
+  .ico { width:14px; height:14px; stroke-width:1.6; flex-shrink:0; }
+  .ico-sm { width:12px; height:12px; stroke-width:1.6; flex-shrink:0; }
+  .ico-lg { width:16px; height:16px; stroke-width:1.6; flex-shrink:0; }
+
+  /* ====================================================================
+     A — REFINED CAD
+     Hairline borders, mono numerics, near-monochrome, indigo dot only as
+     status. Drafting/engineering feel.
+  ==================================================================== */
+  .a {
+    --bg:#ffffff;
+    --bg-1:#f7f6f3;
+    --bg-2:#efede8;
+    --tx:#1a1a18;
+    --tx-2:#5d5b54;
+    --tx-3:#9c9991;
+    --bd:#e0ddd5;
+    --bd-2:#c8c4b9;
+    --accent:#2f2a73;   /* deep indigo */
+    --green:#1d7a55;
+    --red:#b83a39;
+    --amber:#a06318;
+    color:var(--tx);
+    background:var(--bg);
+    font-size:13px;
+    line-height:1.45;
+    font-family: Inter, system-ui, sans-serif;
+    font-feature-settings: "ss01","cv11";
+  }
+  .a .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-feature-settings:"tnum","zero"; }
+  .a .num { font-variant-numeric: tabular-nums; }
+
+  .a .shell { display:grid; grid-template-columns: 300px 1fr 360px; height:880px; }
+  .a .panel { background:var(--bg); border-right:1px solid var(--bd); display:flex; flex-direction:column; min-height:0; }
+  .a .panel.right { border-right:none; border-left:1px solid var(--bd); }
+  .a .panel-header {
+    padding:14px 16px 12px; border-bottom:1px solid var(--bd);
+    display:flex; align-items:center; gap:10px;
+  }
+  .a .crumb { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--tx-3); }
+  .a .title { font-size:16px; font-weight:600; letter-spacing:-.01em; }
+  .a .title-row { display:flex; align-items:center; justify-content:space-between; width:100%; }
+  .a .pill {
+    display:inline-flex; align-items:center; gap:5px;
+    height:20px; padding:0 7px; border-radius:3px;
+    font-size:10px; font-weight:500; letter-spacing:.04em;
+    background:var(--bg-1); color:var(--tx-2); border:1px solid var(--bd);
+  }
+  .a .pill .dot { width:5px; height:5px; border-radius:50%; background:var(--accent); }
+
+  /* Brief sections */
+  .a .sec { border-bottom:1px solid var(--bd); }
+  .a .sec-head {
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+    padding:11px 16px; background:transparent; border:none; cursor:pointer;
+    color:var(--tx); font:inherit; font-weight:600; font-size:12px;
+    letter-spacing:-.005em;
+  }
+  .a .sec-head .meta { color:var(--tx-3); font-size:10px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; }
+  .a .sec-body { padding:4px 16px 14px; }
+  .a label.lbl { display:block; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--tx-3); margin:10px 0 5px; font-weight:500; }
+  .a label.lbl:first-child { margin-top:2px; }
+  .a .field {
+    width:100%; height:30px; padding:0 9px;
+    background:var(--bg); border:1px solid var(--bd); border-radius:4px;
+    font:inherit; font-size:12px; color:var(--tx);
+  }
+  .a .field:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(47,42,115,.08); }
+  .a textarea.field { height:auto; padding:7px 9px; resize:vertical; min-height:54px; line-height:1.45; }
+  .a .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+  .a .stepper { display:flex; align-items:stretch; height:30px; border:1px solid var(--bd); border-radius:4px; overflow:hidden; }
+  .a .stepper button { width:32px; background:var(--bg-1); border:none; color:var(--tx); cursor:pointer; font-size:14px; }
+  .a .stepper button:hover { background:var(--bg-2); }
+  .a .stepper .v { flex:1; display:grid; place-items:center; font-weight:500; font-variant-numeric:tabular-nums; border-left:1px solid var(--bd); border-right:1px solid var(--bd); }
+
+  .a .seg { display:flex; border:1px solid var(--bd); border-radius:4px; overflow:hidden; height:28px; }
+  .a .seg button { flex:1; background:var(--bg); border:none; color:var(--tx-2); font:inherit; font-size:11px; cursor:pointer; }
+  .a .seg button + button { border-left:1px solid var(--bd); }
+  .a .seg button[aria-pressed="true"] { background:var(--tx); color:var(--bg); font-weight:500; }
+
+  /* Programme table */
+  .a table.prog { width:100%; border-collapse:collapse; font-size:11px; margin-top:4px; }
+  .a table.prog th { text-align:left; font-weight:500; color:var(--tx-3); font-size:10px; letter-spacing:.05em; text-transform:uppercase; padding:6px 4px; border-bottom:1px solid var(--bd); }
+  .a table.prog td { padding:7px 4px; border-bottom:1px solid var(--bd); vertical-align:middle; }
+  .a table.prog td:first-child, .a table.prog th:first-child { padding-left:0; }
+  .a table.prog td:last-child, .a table.prog th:last-child { padding-right:0; text-align:right; }
+  .a .prio { display:inline-flex; align-items:center; height:18px; padding:0 7px; border-radius:9px; font-size:10px; letter-spacing:.02em; font-weight:500; }
+  .a .prio.ess { background:#efeefa; color:var(--accent); }
+  .a .prio.des { background:#f3f1ec; color:var(--tx-2); }
+  .a .prio.opt { background:transparent; color:var(--tx-3); border:1px solid var(--bd); }
+  .a .prog input[type=number] { width:42px; height:22px; border:1px solid var(--bd); border-radius:3px; padding:0 4px; font:inherit; font-size:11px; font-variant-numeric:tabular-nums; background:var(--bg); }
+  .a .prog input[type=text]   { width:100%; border:1px solid transparent; background:transparent; font:inherit; font-size:11px; padding:2px 0; color:var(--tx); }
+
+  /* Toolbar */
+  .a .toolbar {
+    height:42px; display:flex; align-items:center; gap:4px; padding:0 12px;
+    border-bottom:1px solid var(--bd); background:var(--bg);
+  }
+  .a .tb-group { display:flex; align-items:center; gap:2px; }
+  .a .tb-sep { width:1px; height:18px; background:var(--bd); margin:0 6px; }
+  .a .iconbtn {
+    height:28px; min-width:28px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:transparent; border:1px solid transparent; border-radius:4px; color:var(--tx-2); cursor:pointer;
+    font:inherit; font-size:11px;
+  }
+  .a .iconbtn:hover { background:var(--bg-1); color:var(--tx); }
+  .a .iconbtn[aria-pressed="true"] { background:var(--bg-2); color:var(--tx); border-color:var(--bd); }
+  .a .iconbtn.primary { color:#fff; background:var(--accent); border-color:var(--accent); padding:0 11px; font-weight:500; }
+  .a .iconbtn.primary:hover { background:#221d5e; }
+  .a .zoom { display:flex; align-items:center; height:28px; border:1px solid var(--bd); border-radius:4px; overflow:hidden; }
+  .a .zoom button { width:28px; height:28px; background:transparent; border:none; color:var(--tx-2); cursor:pointer; }
+  .a .zoom .v { padding:0 8px; font-size:11px; color:var(--tx-2); border-left:1px solid var(--bd); border-right:1px solid var(--bd); height:28px; display:grid; place-items:center; min-width:64px; font-variant-numeric:tabular-nums; }
+  .a .progress { margin-left:auto; display:flex; align-items:center; gap:8px; font-size:11px; color:var(--tx-2); }
+  .a .progress .bar { width:80px; height:4px; background:var(--bg-2); border-radius:2px; overflow:hidden; }
+  .a .progress .bar > i { display:block; height:100%; background:var(--accent); width:60%; }
+
+  /* Canvas */
+  .a .canvas-wrap { flex:1; min-height:0; position:relative; background:
+    linear-gradient(var(--bg-1) 1px, transparent 1px) 0 0/24px 24px,
+    linear-gradient(90deg, var(--bg-1) 1px, transparent 1px) 0 0/24px 24px,
+    var(--bg);
+    overflow:hidden;
+  }
+  .a .ruler-x, .a .ruler-y { position:absolute; background:var(--bg); color:var(--tx-3); font-family:"JetBrains Mono",monospace; font-size:9px; font-variant-numeric:tabular-nums; }
+  .a .ruler-x { top:0; left:0; right:0; height:18px; border-bottom:1px solid var(--bd); display:flex; align-items:center; }
+  .a .ruler-y { top:0; bottom:0; left:0; width:24px; border-right:1px solid var(--bd); display:flex; flex-direction:column; padding-top:18px; }
+  .a .ruler-x span, .a .ruler-y span { padding:0 6px; }
+  .a .ruler-y span { padding:6px 4px; text-align:right; }
+
+  .a .lot {
+    position:absolute; left:80px; top:60px; width:330px; height:760px;
+    background:#fff;
+    border:1px solid var(--tx);
+    box-shadow: 0 1px 0 rgba(0,0,0,.04);
+  }
+  .a .lot::before {
+    content:""; position:absolute; inset:38px 12px 56px 12px;
+    border:1px dashed var(--bd-2);
+  }
+  .a .lot .lot-tag { position:absolute; top:8px; left:10px; font-family:"JetBrains Mono",monospace; font-size:10px; color:var(--tx-3); letter-spacing:.04em; }
+  .a .lot .lot-dim-w { position:absolute; top:-22px; left:0; right:0; text-align:center; font-family:"JetBrains Mono",monospace; font-size:10px; color:var(--tx-3); }
+  .a .lot .lot-dim-h { position:absolute; left:-50px; top:50%; transform:translateY(-50%) rotate(-90deg); transform-origin:center; font-family:"JetBrains Mono",monospace; font-size:10px; color:var(--tx-3); white-space:nowrap; }
+
+  .a .room {
+    position:absolute; border:1px solid var(--tx); background:#fff;
+    display:flex; flex-direction:column; padding:8px 9px; gap:2px;
+  }
+  .a .room .lab { font-size:11px; font-weight:500; }
+  .a .room .a2 { font-family:"JetBrains Mono",monospace; font-size:10px; color:var(--tx-3); }
+  .a .room.living { background:#fbf6e8; }
+  .a .room.kitchen { background:#f3eed7; }
+  .a .room.bed { background:#eef0e3; }
+  .a .room.wet { background:#e6ecef; }
+  .a .room.outdoor { background:#eaeee0; border-style:dashed; }
+  .a .room.selected { box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px rgba(47,42,115,.15); }
+  .a .handle { position:absolute; width:6px; height:6px; background:#fff; border:1px solid var(--accent); }
+  .a .handle.tl { top:-3px; left:-3px; } .a .handle.tr { top:-3px; right:-3px; }
+  .a .handle.bl { bottom:-3px; left:-3px; } .a .handle.br { bottom:-3px; right:-3px; }
+  .a .handle.t { top:-3px; left:50%; margin-left:-3px; } .a .handle.b { bottom:-3px; left:50%; margin-left:-3px; }
+  .a .handle.l { top:50%; left:-3px; margin-top:-3px; } .a .handle.r { top:50%; right:-3px; margin-top:-3px; }
+
+  /* Right panel: metrics + tabs */
+  .a .metrics { padding:16px; border-bottom:1px solid var(--bd); }
+  .a .kpi { display:flex; align-items:baseline; gap:8px; margin-bottom:6px; }
+  .a .kpi .num { font-family:"JetBrains Mono",monospace; font-size:24px; font-weight:500; letter-spacing:-.01em; }
+  .a .kpi .unit { color:var(--tx-3); font-size:11px; font-family:"JetBrains Mono",monospace; }
+  .a .kpi .delta { margin-left:auto; font-size:10px; color:var(--tx-3); letter-spacing:.06em; text-transform:uppercase; }
+  .a .gauge { height:6px; background:var(--bg-2); border-radius:3px; overflow:hidden; margin:6px 0 12px; position:relative; }
+  .a .gauge > i { display:block; height:100%; background:var(--accent); }
+  .a .gauge .lim { position:absolute; right:0; top:-3px; bottom:-3px; width:1px; background:var(--tx); }
+
+  .a .breakdown { display:grid; grid-template-columns: 1fr auto; row-gap:5px; column-gap:14px; font-size:11px; }
+  .a .breakdown .k { color:var(--tx-2); display:flex; align-items:center; gap:6px; }
+  .a .breakdown .k::before { content:""; width:8px; height:8px; border-radius:1px; background:var(--swatch,var(--tx-3)); }
+  .a .breakdown .v { font-family:"JetBrains Mono",monospace; color:var(--tx); font-variant-numeric:tabular-nums; }
+
+  .a .alerts { padding:10px 16px; border-bottom:1px solid var(--bd); display:flex; flex-direction:column; gap:6px; background:var(--bg-1); }
+  .a .alert { display:flex; align-items:flex-start; gap:8px; font-size:11px; color:var(--tx-2); }
+  .a .alert.warn { color:var(--amber); }
+  .a .alert.err { color:var(--red); }
+  .a .alert .ic { margin-top:1px; }
+
+  .a .tabs { display:flex; border-bottom:1px solid var(--bd); padding:0 12px; }
+  .a .tab { padding:11px 12px; font-size:12px; color:var(--tx-3); background:none; border:none; cursor:pointer; position:relative; font:inherit; font-weight:500; }
+  .a .tab[aria-selected="true"] { color:var(--tx); }
+  .a .tab[aria-selected="true"]::after { content:""; position:absolute; left:8px; right:8px; bottom:-1px; height:2px; background:var(--tx); }
+
+  .a .inspector-card { padding:14px 16px; }
+  .a .insp-row { display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-top:1px solid var(--bd); font-size:11px; color:var(--tx-2); }
+  .a .insp-row:first-child { border-top:none; }
+  .a .insp-row .v { color:var(--tx); font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums; }
+  .a .ghost-btn { width:100%; height:30px; background:var(--bg); border:1px solid var(--bd); border-radius:4px; color:var(--tx-2); font:inherit; font-size:11px; cursor:pointer; margin-top:10px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  .a .ghost-btn:hover { color:var(--red); border-color:var(--red); background:#fff7f6; }
+
+  /* ====================================================================
+     B — WARM STUDIO
+     Editorial. Warm whites, generous whitespace, serif accent for
+     numerals, calmer hierarchy.
+  ==================================================================== */
+  .b {
+    --bg:#faf7f0;
+    --bg-1:#f3eee2;
+    --bg-2:#ebe5d4;
+    --tx:#1f1d18;
+    --tx-2:#6b6557;
+    --tx-3:#a09a89;
+    --bd:#e7e0cf;
+    --bd-2:#d6cdb6;
+    --accent:#9b4a2a;     /* terracotta */
+    --accent-2:#3a4d3a;   /* moss */
+    --green:#3a5a3a;
+    --red:#a23a3a;
+    --amber:#a36a18;
+    color:var(--tx);
+    background:var(--bg);
+    font-size:13px;
+    line-height:1.5;
+    font-family: Inter, system-ui, sans-serif;
+  }
+  /* dark warm variant of B */
+  .b.dark {
+    --bg:#1a1612;
+    --bg-1:#221d18;
+    --bg-2:#2c2620;
+    --tx:#f1ead9;
+    --tx-2:#b6ab93;
+    --tx-3:#7c7160;
+    --bd:#332c24;
+    --bd-2:#46392e;
+    --accent:#e0825a;     /* warm terracotta */
+    --accent-2:#9bbf8a;   /* sage */
+    --green:#9bbf8a;
+    --red:#e58a7a;
+    --amber:#e0a85a;
+  }
+  .b.dark .brand .mark::after { border-color:var(--bg); }
+  .b.dark .room.living  { background:#3a2f1a; border-color:#5a4a28; }
+  .b.dark .room.kitchen { background:#3f2c18; border-color:#6a4a26; }
+  .b.dark .room.bed     { background:#243121; border-color:#3e5236; }
+  .b.dark .room.wet     { background:#1f2a30; border-color:#34464f; }
+  .b.dark .room.outdoor { background:#27321f; border-color:#3e4f30; border-style:dashed; }
+  .b.dark .room { color:var(--tx); border-width:1px; }
+  .b.dark .room .a2 { color:rgba(241,234,217,.65); }
+  .b.dark .lot { background:var(--bg-1); border-color:#5a4d3a; box-shadow:0 12px 32px rgba(0,0,0,.4); }
+  .b.dark .canvas-wrap { background:var(--bg); }
+  .b.dark .canvas-wrap::before { background-image:radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px); }
+  .b.dark .toolrail { background:var(--bg-1); border-color:var(--bd-2); box-shadow:0 4px 16px rgba(0,0,0,.3); }
+  .b.dark .iconbtn.primary { background:var(--accent); color:#1a1612; border-color:var(--accent); }
+  .b.dark .iconbtn.primary:hover { background:#ec9572; }
+  .b.dark .seg { background:var(--bg-2); }
+  .b.dark .seg button[aria-pressed="true"] { background:var(--bg-1); color:var(--tx); box-shadow:0 1px 2px rgba(0,0,0,.3); }
+  .b.dark .stepper button { background:var(--bg-2); border-color:var(--bd-2); color:var(--tx); }
+  .b.dark table.prog .check.on { background:var(--accent); border-color:var(--accent); color:var(--bg); }
+  .b.dark .chip.ess { background:rgba(224,130,90,.16); color:var(--accent); }
+  .b.dark .chip.des { background:var(--bg-2); color:var(--tx-2); }
+  .b.dark .chip.opt { color:var(--tx-3); border-color:var(--bd-2); }
+  .b.dark .field { background:var(--bg-1); border-color:var(--bd-2); color:var(--tx); }
+  .b.dark .field:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(224,130,90,.18); }
+  .b.dark .alert.err .ic { background:rgba(229,138,122,.18); color:var(--red); }
+  .b.dark .alert.warn .ic { background:rgba(224,168,90,.18); color:var(--amber); }
+  .b.dark .crit .ask { background:var(--bg-1); border-color:var(--bd-2); }
+  .b.dark .crit .ask .hd .av { background:var(--accent-2); color:#1a1612; }
+  .b.dark .crit .input { background:var(--bg-2); border-color:var(--bd-2); }
+  .b.dark .crit .input button { background:var(--accent); color:#1a1612; }
+  .b.dark .msg.user .av { background:var(--bg-2); color:var(--tx-2); }
+  .b.dark .msg.crit .av { background:var(--accent-2); color:#1a1612; }
+  .b.dark .metrics .gauge > i { background:linear-gradient(90deg, var(--accent-2), var(--accent)); }
+  .b.dark .metrics .big .pct { color:var(--accent-2); }
+  .b.dark .brand .name em { color:var(--accent); }
+  .b.dark .project .name, .b.dark .canvas-head .h-title, .b.dark .metrics .big .v, .b.dark table.prog .area, .b.dark .msg.crit .av { color: var(--tx); }
+  .b.dark .msg.crit .av { color:#1a1612; }
+
+  /* collapsible / draggable panel chrome (used in B) */
+  .b .pn { border-bottom:1px solid var(--bd); }
+  .b .pn-head { display:flex; align-items:center; gap:8px; padding:10px 14px 10px 8px; cursor:grab; user-select:none; background:transparent; border:none; width:100%; font:inherit; color:var(--tx); }
+  .b .pn-head:hover { background:var(--bg-1); }
+  .b .pn-head:active { cursor:grabbing; }
+  .b .pn-head .grip { width:14px; display:grid; grid-template-columns:repeat(2, 3px); grid-template-rows:repeat(3, 3px); gap:2px; opacity:.45; flex-shrink:0; }
+  .b .pn-head .grip i { background:var(--tx-3); border-radius:50%; }
+  .b .pn-head .lab { flex:1; text-align:left; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--tx-2); font-weight:600; }
+  .b .pn-head .meta { font-size:11px; color:var(--tx-3); margin-right:4px; }
+  .b .pn-head .chev { width:18px; height:18px; display:grid; place-items:center; color:var(--tx-3); transition:transform .2s; }
+  .b .pn[data-collapsed="true"] .chev { transform:rotate(-90deg); }
+  .b .pn[data-collapsed="true"] .pn-body { display:none; }
+  .b .pn[data-dragging="true"] { background:var(--bg-1); box-shadow:0 6px 18px rgba(0,0,0,.18); position:relative; z-index:2; }
+  .b.dark .pn-head:hover { background:var(--bg-1); }
+  .b.dark .pn[data-dragging="true"] { background:var(--bg-2); box-shadow:0 8px 24px rgba(0,0,0,.5); }
+
+  .b .serif { font-family: "Instrument Serif", Georgia, serif; font-style:italic; font-weight:400; }
+  .b .mono { font-family: "JetBrains Mono", monospace; }
+  .b .shell { display:grid; grid-template-columns: 320px 1fr 360px; height:880px; }
+  .b .panel { background:var(--bg); border-right:1px solid var(--bd); display:flex; flex-direction:column; min-height:0; }
+  .b .panel.right { border-right:none; border-left:1px solid var(--bd); }
+
+  .b .brand {
+    padding:18px 20px 14px; border-bottom:1px solid var(--bd);
+    display:flex; align-items:center; gap:10px;
+  }
+  .b .brand .mark { width:24px; height:24px; border-radius:50%; background:var(--accent); position:relative; }
+  .b .brand .mark::after { content:""; position:absolute; inset:6px; border:1px solid var(--bg); border-radius:50%; }
+  .b .brand .name { font-size:14px; font-weight:600; letter-spacing:-.01em; }
+  .b .brand .name em { font-family:"Instrument Serif",serif; font-style:italic; font-weight:400; color:var(--accent); }
+
+  .b .project {
+    padding:14px 20px 16px; border-bottom:1px solid var(--bd);
+  }
+  .b .project .label { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--tx-3); margin-bottom:4px; }
+  .b .project .name { font-family:"Instrument Serif",serif; font-size:24px; line-height:1.15; letter-spacing:-.01em; }
+  .b .project .meta { display:flex; gap:10px; margin-top:8px; font-size:11px; color:var(--tx-2); }
+  .b .project .meta .dot { width:3px; height:3px; border-radius:50%; background:var(--tx-3); align-self:center; }
+
+  .b .sec { border-bottom:1px solid var(--bd); padding:14px 20px; }
+  .b .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .b .sec-title { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--tx-2); font-weight:600; }
+  .b .sec-meta { font-size:11px; color:var(--tx-3); }
+
+  .b .field {
+    width:100%; height:34px; padding:0 12px;
+    background:var(--bg); border:1px solid var(--bd); border-radius:8px;
+    font:inherit; font-size:13px; color:var(--tx);
+  }
+  .b .field:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(155,74,42,.1); }
+  .b textarea.field { height:auto; padding:9px 12px; resize:vertical; min-height:60px; }
+  .b label.lbl { display:block; font-size:11px; color:var(--tx-2); margin:10px 0 5px; }
+  .b label.lbl:first-child { margin-top:0; }
+
+  .b .seg { display:inline-flex; padding:3px; border-radius:8px; background:var(--bg-1); }
+  .b .seg button { padding:5px 12px; border:none; background:transparent; font:inherit; font-size:12px; color:var(--tx-2); cursor:pointer; border-radius:5px; }
+  .b .seg button[aria-pressed="true"] { background:var(--bg); color:var(--tx); box-shadow:0 1px 2px rgba(0,0,0,.06); }
+
+  .b .stepper { display:flex; align-items:center; gap:10px; }
+  .b .stepper button { width:28px; height:28px; border-radius:50%; border:1px solid var(--bd); background:var(--bg); font-size:14px; color:var(--tx-2); cursor:pointer; }
+  .b .stepper .v { font-family:"Instrument Serif",serif; font-size:22px; min-width:30px; text-align:center; }
+
+  .b table.prog { width:100%; border-collapse:collapse; font-size:12px; }
+  .b table.prog tr { }
+  .b table.prog td { padding:8px 0; border-bottom:1px solid var(--bd); }
+  .b table.prog .nm { display:flex; align-items:center; gap:10px; }
+  .b table.prog .check { width:14px; height:14px; border-radius:50%; border:1.5px solid var(--bd-2); display:grid; place-items:center; flex-shrink:0; }
+  .b table.prog .check.on { border-color:var(--accent-2); background:var(--accent-2); color:#fff; }
+  .b table.prog .area { font-family:"Instrument Serif",serif; font-size:14px; font-style:italic; color:var(--tx); }
+  .b .chip { display:inline-flex; align-items:center; height:20px; padding:0 9px; border-radius:11px; font-size:10px; font-weight:500; letter-spacing:.04em; text-transform:uppercase; }
+  .b .chip.ess { background:rgba(155,74,42,.1); color:var(--accent); }
+  .b .chip.des { background:var(--bg-1); color:var(--tx-2); }
+  .b .chip.opt { background:transparent; color:var(--tx-3); border:1px solid var(--bd); }
+
+  /* Canvas */
+  .b .canvas-head {
+    height:54px; padding:0 22px; border-bottom:1px solid var(--bd);
+    display:flex; align-items:center; gap:14px; background:var(--bg);
+  }
+  .b .canvas-head .h-title { font-family:"Instrument Serif",serif; font-size:18px; }
+  .b .canvas-head .h-sub { font-size:11px; color:var(--tx-3); letter-spacing:.04em; }
+  .b .canvas-head .spacer { flex:1; }
+  .b .iconbtn {
+    height:32px; min-width:32px; padding:0 9px; display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    background:transparent; border:1px solid transparent; border-radius:8px; color:var(--tx-2); cursor:pointer;
+    font:inherit; font-size:12px;
+  }
+  .b .iconbtn:hover { background:var(--bg-1); color:var(--tx); }
+  .b .iconbtn[aria-pressed="true"] { background:var(--bg-2); color:var(--tx); }
+  .b .iconbtn.primary { color:#fff; background:var(--accent-2); border-color:var(--accent-2); padding:0 14px; }
+  .b .iconbtn.primary:hover { background:#2c3c2c; }
+  .b .iconbtn.ghost { border-color:var(--bd); }
+
+  .b .toolrail {
+    position:absolute; left:18px; top:18px;
+    background:var(--bg); border:1px solid var(--bd); border-radius:10px;
+    box-shadow:0 1px 2px rgba(0,0,0,.04);
+    padding:6px; display:flex; flex-direction:column; gap:2px; z-index:5;
+  }
+  .b .toolrail .iconbtn { height:30px; width:30px; padding:0; border-radius:6px; }
+
+  .b .canvas-wrap { flex:1; min-height:0; position:relative; background:var(--bg-1); overflow:hidden; }
+  .b .canvas-wrap::before {
+    content:""; position:absolute; inset:0;
+    background-image:radial-gradient(rgba(0,0,0,.07) 1px, transparent 1px);
+    background-size:18px 18px; opacity:.7;
+  }
+
+  .b .lot {
+    position:absolute; left:120px; top:50px; width:330px; height:780px;
+    background:var(--bg);
+    border:1px solid var(--tx);
+    border-radius:2px;
+    box-shadow:0 8px 24px rgba(60,40,20,.06);
+  }
+  .b .lot .lot-tag { position:absolute; top:-26px; left:0; font-family:"Instrument Serif",serif; font-size:14px; font-style:italic; color:var(--tx-2); }
+  .b .lot .lot-dim { position:absolute; bottom:-22px; right:0; font-size:11px; color:var(--tx-3); font-family:"JetBrains Mono",monospace; }
+
+  .b .room {
+    position:absolute; border:1px solid var(--tx); background:var(--bg);
+    display:flex; flex-direction:column; padding:10px 12px; gap:3px; border-radius:1px;
+  }
+  .b .room .lab { font-size:12px; font-weight:500; letter-spacing:-.01em; }
+  .b .room .a2 { font-family:"Instrument Serif",serif; font-style:italic; font-size:13px; color:var(--tx-2); }
+  .b .room.living { background:#f5e9c8; }
+  .b .room.kitchen { background:#ecdba6; }
+  .b .room.bed { background:#dde3c8; }
+  .b .room.wet { background:#cfd9d9; }
+  .b .room.outdoor { background:#dee5c8; border-style:dashed; }
+  .b .room.selected { box-shadow:0 0 0 2px var(--accent), 0 0 0 5px rgba(155,74,42,.18); }
+
+  /* Right column */
+  .b .metrics { padding:18px 22px 14px; border-bottom:1px solid var(--bd); }
+  .b .metrics .h { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--tx-3); }
+  .b .metrics .big { display:flex; align-items:baseline; gap:10px; margin-top:6px; }
+  .b .metrics .big .v { font-family:"Instrument Serif",serif; font-size:42px; line-height:1; letter-spacing:-.02em; }
+  .b .metrics .big .of { color:var(--tx-3); font-size:13px; }
+  .b .metrics .big .pct { margin-left:auto; font-size:13px; font-weight:500; color:var(--accent-2); }
+  .b .metrics .gauge { height:5px; background:var(--bg-1); border-radius:3px; overflow:hidden; margin:14px 0 12px; }
+  .b .metrics .gauge > i { display:block; height:100%; background:linear-gradient(90deg, var(--accent-2), var(--accent)); width:62%; }
+  .b .metrics .breakdown { display:grid; grid-template-columns:1fr auto; row-gap:7px; font-size:12px; }
+  .b .metrics .breakdown .k { color:var(--tx-2); display:flex; align-items:center; gap:8px; }
+  .b .metrics .breakdown .k::before { content:""; width:9px; height:9px; border-radius:50%; background:var(--swatch,var(--tx-3)); }
+  .b .metrics .breakdown .v { font-family:"Instrument Serif",serif; font-style:italic; color:var(--tx); font-size:13px; }
+
+  .b .alerts { padding:12px 22px; display:flex; flex-direction:column; gap:8px; border-bottom:1px solid var(--bd); }
+  .b .alert { display:flex; gap:10px; align-items:flex-start; font-size:12px; color:var(--tx-2); }
+  .b .alert .ic { width:18px; height:18px; border-radius:50%; display:grid; place-items:center; flex-shrink:0; margin-top:1px; }
+  .b .alert.warn .ic { background:rgba(163,106,24,.15); color:var(--amber); }
+  .b .alert.err .ic { background:rgba(162,58,58,.15); color:var(--red); }
+  .b .alert .body strong { display:block; color:var(--tx); font-weight:500; margin-bottom:2px; }
+
+  .b .tabs { display:flex; padding:14px 22px 0; gap:18px; border-bottom:1px solid var(--bd); }
+  .b .tab { padding:0 0 12px; font-size:12px; color:var(--tx-3); background:none; border:none; cursor:pointer; position:relative; font:inherit; letter-spacing:.04em; }
+  .b .tab[aria-selected="true"] { color:var(--tx); }
+  .b .tab[aria-selected="true"]::after { content:""; position:absolute; left:-2px; right:-2px; bottom:-1px; height:2px; background:var(--accent); }
+
+  .b .crit { padding:18px 22px; flex:1; display:flex; flex-direction:column; gap:14px; min-height:0; overflow:auto; }
+  .b .crit .ask {
+    background:var(--bg-1); border:1px solid var(--bd); border-radius:14px; padding:14px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .b .crit .ask .hd { display:flex; align-items:center; gap:8px; }
+  .b .crit .ask .hd .av { width:24px; height:24px; border-radius:50%; background:var(--accent-2); color:#fff; display:grid; place-items:center; font-family:"Instrument Serif",serif; font-style:italic; font-size:14px; }
+  .b .crit .ask .hd .nm { font-size:12px; font-weight:500; }
+  .b .crit .ask .hd .st { margin-left:auto; font-size:11px; color:var(--tx-3); }
+  .b .crit .ask .actions { display:flex; gap:6px; }
+  .b .crit .ask .actions .iconbtn { font-size:11px; height:30px; }
+  .b .crit .input { display:flex; gap:6px; align-items:center; padding:6px; background:var(--bg); border:1px solid var(--bd); border-radius:10px; }
+  .b .crit .input input { flex:1; height:30px; border:none; background:transparent; font:inherit; font-size:13px; padding:0 8px; }
+  .b .crit .input input:focus { outline:none; }
+  .b .crit .input button { height:30px; width:30px; border-radius:8px; border:none; background:var(--accent-2); color:#fff; cursor:pointer; }
+
+  .b .msg { display:flex; gap:10px; }
+  .b .msg .av { width:24px; height:24px; border-radius:50%; flex-shrink:0; display:grid; place-items:center; font-size:11px; font-weight:600; }
+  .b .msg.user .av { background:var(--bg-1); color:var(--tx-2); }
+  .b .msg.crit .av { background:var(--accent-2); color:#fff; font-family:"Instrument Serif",serif; font-style:italic; }
+  .b .msg .body { flex:1; }
+  .b .msg .name { font-size:11px; color:var(--tx-2); font-weight:500; margin-bottom:3px; }
+  .b .msg .text { font-size:12.5px; color:var(--tx); line-height:1.55; }
+  .b .msg .text strong { color:var(--tx); }
+  .b .msg .text em { font-family:"Instrument Serif",serif; font-style:italic; }
+
+  /* ====================================================================
+     C — MODERN DASHBOARD (Linear-ish dark)
+     Crisp dark, refined indigo accent, clear hierarchy, dashboard chips.
+  ==================================================================== */
+  .c {
+    --bg:#0f0f10;
+    --bg-1:#161618;
+    --bg-2:#1d1d20;
+    --bg-3:#26262a;
+    --tx:#ececef;
+    --tx-2:#a1a1aa;
+    --tx-3:#65656e;
+    --bd:#26262a;
+    --bd-2:#34343a;
+    --accent:#7c70ff;
+    --accent-2:#5b50e6;
+    --green:#3ad07a;
+    --red:#ff6b6b;
+    --amber:#ffb547;
+    --blue:#5eaaff;
+    color:var(--tx);
+    background:var(--bg);
+    font-size:13px;
+    line-height:1.5;
+    font-family: Geist, Inter, system-ui, sans-serif;
+    font-feature-settings:"cv11";
+  }
+  .c .mono { font-family: "Geist Mono","JetBrains Mono",monospace; }
+  .c .num { font-variant-numeric: tabular-nums; }
+  .c .shell { display:grid; grid-template-columns: 280px 1fr 360px; height:880px; }
+  .c .panel { background:var(--bg); display:flex; flex-direction:column; min-height:0; }
+  .c .panel.left { border-right:1px solid var(--bd); }
+  .c .panel.right { border-left:1px solid var(--bd); }
+
+  .c .brand { padding:14px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--bd); }
+  .c .brand .mark { width:22px; height:22px; border-radius:6px; background:linear-gradient(135deg, var(--accent), var(--accent-2)); display:grid; place-items:center; color:#fff; font-weight:700; font-size:11px; }
+  .c .brand .name { font-weight:600; font-size:13px; letter-spacing:-.005em; }
+  .c .brand .ws { color:var(--tx-3); font-size:12px; }
+
+  .c .project { padding:14px 16px; border-bottom:1px solid var(--bd); }
+  .c .project .name {
+    width:100%; background:transparent; border:none; padding:0;
+    font-family:inherit; font-size:15px; font-weight:600; color:var(--tx); letter-spacing:-.01em;
+  }
+  .c .project .meta { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .c .tag {
+    display:inline-flex; align-items:center; gap:5px;
+    height:20px; padding:0 8px; border-radius:6px;
+    background:var(--bg-2); color:var(--tx-2); font-size:11px; font-weight:500;
+  }
+  .c .tag .dot { width:6px; height:6px; border-radius:50%; }
+  .c .tag .dot.g { background:var(--green); }
+  .c .tag .dot.a { background:var(--amber); }
+  .c .tag .dot.r { background:var(--red); }
+  .c .tag .dot.b { background:var(--blue); }
+
+  .c .scroll { overflow:auto; flex:1; min-height:0; }
+  .c .nav { padding:8px; }
+  .c .nav .item {
+    display:flex; align-items:center; gap:10px; padding:7px 8px; border-radius:6px;
+    color:var(--tx-2); font-size:13px; cursor:pointer; user-select:none;
+  }
+  .c .nav .item:hover { background:var(--bg-1); color:var(--tx); }
+  .c .nav .item.active { background:var(--bg-2); color:var(--tx); }
+  .c .nav .item .ct { margin-left:auto; font-size:11px; color:var(--tx-3); }
+  .c .nav .group-h {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 8px 6px; font-size:11px; font-weight:500;
+    color:var(--tx-3); letter-spacing:.04em; text-transform:uppercase;
+  }
+  .c .nav .group-h .add { width:18px; height:18px; border-radius:4px; display:grid; place-items:center; cursor:pointer; }
+  .c .nav .group-h .add:hover { background:var(--bg-2); color:var(--tx); }
+
+  /* compact brief inside left nav */
+  .c .nav .field {
+    width:100%; height:30px; padding:0 9px;
+    background:var(--bg-1); border:1px solid var(--bd); border-radius:6px;
+    color:var(--tx); font:inherit; font-size:12px;
+  }
+  .c .nav .field:focus { outline:none; border-color:var(--accent); }
+  .c .nav .stack { padding:6px 8px 4px; display:flex; flex-direction:column; gap:8px; }
+  .c .nav .lbl { font-size:11px; color:var(--tx-3); margin-bottom:3px; }
+  .c .nav .progrow { display:flex; align-items:center; gap:8px; padding:5px 4px; border-radius:5px; font-size:12px; color:var(--tx-2); }
+  .c .nav .progrow:hover { background:var(--bg-1); color:var(--tx); }
+  .c .nav .progrow .check { width:13px; height:13px; border-radius:3px; border:1.5px solid var(--bd-2); display:grid; place-items:center; flex-shrink:0; }
+  .c .nav .progrow .check.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .c .nav .progrow .nm { flex:1; }
+  .c .nav .progrow .a2 { font-family:"Geist Mono",monospace; color:var(--tx-3); font-size:11px; font-variant-numeric:tabular-nums; }
+  .c .nav .progrow .pri { width:6px; height:6px; border-radius:50%; }
+  .c .nav .progrow .pri.ess { background:var(--accent); }
+  .c .nav .progrow .pri.des { background:var(--blue); }
+  .c .nav .progrow .pri.opt { background:var(--tx-3); }
+
+  /* center: header bar + canvas */
+  .c .topbar {
+    height:48px; display:flex; align-items:center; gap:6px; padding:0 14px;
+    border-bottom:1px solid var(--bd); background:var(--bg);
+  }
+  .c .iconbtn {
+    height:28px; min-width:28px; padding:0 8px; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:transparent; border:1px solid transparent; border-radius:6px; color:var(--tx-2); cursor:pointer;
+    font:inherit; font-size:12px; font-weight:500;
+  }
+  .c .iconbtn:hover { background:var(--bg-1); color:var(--tx); }
+  .c .iconbtn[aria-pressed="true"] { background:var(--bg-2); color:var(--tx); }
+  .c .iconbtn.primary { background:var(--accent); color:#fff; border-color:var(--accent); padding:0 11px; }
+  .c .iconbtn.primary:hover { background:var(--accent-2); }
+  .c .iconbtn.kbd { padding:0 7px; }
+  .c .kbd { font-family:"Geist Mono",monospace; font-size:10px; color:var(--tx-3); padding:1px 5px; border:1px solid var(--bd); border-radius:3px; }
+  .c .sep { width:1px; height:18px; background:var(--bd); margin:0 4px; }
+  .c .crumb-row { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--tx-2); }
+  .c .crumb-row .sep-c { color:var(--tx-3); }
+  .c .crumb-row .here { color:var(--tx); font-weight:500; }
+  .c .topbar .right { margin-left:auto; display:flex; align-items:center; gap:6px; }
+
+  .c .canvas-wrap {
+    flex:1; min-height:0; position:relative; overflow:hidden;
+    background:
+      linear-gradient(var(--bg-1) 1px, transparent 1px) 0 0/24px 24px,
+      linear-gradient(90deg, var(--bg-1) 1px, transparent 1px) 0 0/24px 24px,
+      var(--bg);
+  }
+  .c .floating-tools {
+    position:absolute; left:50%; bottom:18px; transform:translateX(-50%);
+    background:var(--bg-2); border:1px solid var(--bd-2); border-radius:10px;
+    padding:5px; display:flex; gap:2px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  .c .floating-tools .iconbtn { height:32px; width:32px; padding:0; border-radius:7px; }
+  .c .floating-tools .sep-v { width:1px; background:var(--bd-2); margin:4px 4px; }
+
+  .c .lot {
+    position:absolute; left:120px; top:50px; width:300px; height:780px;
+    background:var(--bg-1); border:1px solid var(--bd-2); border-radius:4px;
+  }
+  .c .lot::before { content:""; position:absolute; inset:36px 12px 56px 12px; border:1px dashed var(--bd-2); border-radius:2px; }
+  .c .lot .tag {
+    position:absolute; top:8px; left:10px;
+    font-family:"Geist Mono",monospace; font-size:10px; color:var(--tx-3); letter-spacing:.04em;
+  }
+  .c .lot .dim {
+    position:absolute; right:10px; bottom:8px;
+    font-family:"Geist Mono",monospace; font-size:10px; color:var(--tx-3);
+  }
+
+  .c .room {
+    position:absolute; border-radius:4px;
+    display:flex; flex-direction:column; padding:8px 10px; gap:2px;
+    border:1px solid; backdrop-filter: blur(2px);
+  }
+  .c .room .lab { font-size:11px; font-weight:600; color:#fff; }
+  .c .room .a2 { font-family:"Geist Mono",monospace; font-size:10px; color:rgba(255,255,255,.7); font-variant-numeric:tabular-nums; }
+  .c .room.living  { background:rgba(255,180,90,.18);  border-color:rgba(255,180,90,.55); }
+  .c .room.kitchen { background:rgba(255,140,80,.20);  border-color:rgba(255,140,80,.6); }
+  .c .room.bed     { background:rgba(120,200,140,.18); border-color:rgba(120,200,140,.55); }
+  .c .room.wet     { background:rgba(94,170,255,.18);  border-color:rgba(94,170,255,.55); }
+  .c .room.outdoor { background:rgba(160,200,120,.14); border-color:rgba(160,200,120,.5); border-style:dashed; }
+  .c .room.selected { box-shadow:0 0 0 2px var(--accent), 0 0 0 6px rgba(124,112,255,.2); }
+
+  /* right rail */
+  .c .right .head {
+    padding:14px 16px; border-bottom:1px solid var(--bd);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .c .right .head .h { font-size:13px; font-weight:600; }
+  .c .right .head .actions { display:flex; gap:4px; }
+
+  .c .stats { padding:14px 16px; border-bottom:1px solid var(--bd); display:flex; flex-direction:column; gap:14px; }
+  .c .stat-card {
+    background:var(--bg-1); border:1px solid var(--bd); border-radius:10px; padding:12px 14px;
+  }
+  .c .stat-card .lbl { font-size:11px; color:var(--tx-2); letter-spacing:.02em; display:flex; align-items:center; justify-content:space-between; }
+  .c .stat-card .lbl .delta { color:var(--green); font-weight:500; }
+  .c .stat-card .v { display:flex; align-items:baseline; gap:6px; margin-top:6px; }
+  .c .stat-card .v .num { font-size:24px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .c .stat-card .v .of { color:var(--tx-3); font-size:13px; }
+  .c .stat-card .v .pct { margin-left:auto; font-size:13px; color:var(--tx-2); font-variant-numeric:tabular-nums; }
+  .c .stat-card .gauge { height:5px; background:var(--bg-3); border-radius:3px; margin-top:10px; overflow:hidden; position:relative; }
+  .c .stat-card .gauge > i { display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--blue)); width:62%; border-radius:3px; }
+
+  .c .legend { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; }
+  .c .legend .l { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--tx-2); }
+  .c .legend .l::before { content:""; width:10px; height:10px; border-radius:3px; background:var(--swatch,var(--tx-3)); }
+  .c .legend .l .v { margin-left:auto; color:var(--tx); font-variant-numeric:tabular-nums; font-family:"Geist Mono",monospace; font-size:11px; }
+
+  .c .tabs { display:flex; padding:0 14px; border-bottom:1px solid var(--bd); gap:2px; }
+  .c .tab { padding:11px 10px; font-size:12px; color:var(--tx-2); background:none; border:none; cursor:pointer; position:relative; font:inherit; font-weight:500; }
+  .c .tab[aria-selected="true"] { color:var(--tx); }
+  .c .tab[aria-selected="true"]::after { content:""; position:absolute; left:6px; right:6px; bottom:-1px; height:2px; background:var(--accent); border-radius:2px 2px 0 0; }
+  .c .tab .ct { margin-left:6px; padding:1px 6px; border-radius:8px; background:var(--bg-2); font-size:10px; color:var(--tx-2); font-variant-numeric:tabular-nums; }
+
+  .c .crit { flex:1; min-height:0; display:flex; flex-direction:column; }
+  .c .crit-actions { padding:12px 14px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .c .crit-actions .iconbtn { justify-content:flex-start; height:36px; padding:0 12px; background:var(--bg-1); border:1px solid var(--bd); color:var(--tx); }
+  .c .crit-actions .iconbtn .sub { color:var(--tx-3); font-size:10px; font-weight:400; margin-top:2px; }
+  .c .crit-actions .iconbtn .col { display:flex; flex-direction:column; align-items:flex-start; }
+
+  .c .crit-thread { flex:1; min-height:0; overflow:auto; padding:8px 14px 14px; display:flex; flex-direction:column; gap:12px; }
+  .c .msg { display:flex; gap:10px; }
+  .c .msg .av { width:24px; height:24px; border-radius:50%; flex-shrink:0; display:grid; place-items:center; font-size:11px; font-weight:600; }
+  .c .msg.user .av { background:var(--bg-2); color:var(--tx-2); }
+  .c .msg.crit .av { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; }
+  .c .msg .body { flex:1; min-width:0; }
+  .c .msg .name { display:flex; gap:8px; align-items:center; font-size:11px; color:var(--tx-2); margin-bottom:4px; }
+  .c .msg .name strong { color:var(--tx); font-weight:500; }
+  .c .msg .name .t { color:var(--tx-3); }
+  .c .msg .text { font-size:12.5px; color:var(--tx); line-height:1.55; }
+  .c .msg .text strong { color:#fff; font-weight:600; }
+  .c .msg .text .h { color:var(--tx); font-weight:600; margin-top:8px; }
+  .c .msg .text ul { margin:4px 0 0; padding-left:18px; }
+  .c .msg .text li { margin-bottom:3px; }
+  .c .msg .reactions { display:flex; gap:4px; margin-top:8px; }
+  .c .msg .reactions .iconbtn { height:24px; padding:0 8px; font-size:11px; background:var(--bg-1); border:1px solid var(--bd); border-radius:14px; }
+  .c .composer { padding:10px 14px 14px; border-top:1px solid var(--bd); }
+  .c .composer .box { background:var(--bg-1); border:1px solid var(--bd); border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:8px; }
+  .c .composer textarea { width:100%; resize:none; height:38px; background:transparent; border:none; color:var(--tx); font:inherit; font-size:13px; padding:4px 4px 0; }
+  .c .composer textarea:focus { outline:none; }
+  .c .composer .row { display:flex; align-items:center; gap:6px; }
+  .c .composer .row .spacer { flex:1; }
+  .c .composer .send { background:var(--accent); color:#fff; height:28px; padding:0 12px; border-radius:6px; border:none; font:inherit; font-size:12px; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+
+  /* design canvas tweaks */
+  .dc-section-title { font-family: Inter, system-ui, sans-serif; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- =========================================================
+     Mock app shells, written as raw HTML inside templates
+     so React can drop them straight into DCArtboards.
+========================================================= -->
+
+<template id="tpl-a">
+<div class="app a">
+  <div class="shell">
+
+    <!-- LEFT: brief -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="title-row">
+          <div>
+            <div class="crumb">Project · Brief</div>
+            <div class="title">Bondi Junction terrace</div>
+          </div>
+          <span class="pill"><span class="dot"></span>Auto-saved</span>
+        </div>
+      </div>
+      <div style="overflow:auto; flex:1; min-height:0;">
+        <div class="sec">
+          <button class="sec-head" type="button">
+            <span>Household</span>
+            <span class="meta">4 fields</span>
+          </button>
+          <div class="sec-body">
+            <label class="lbl">Occupants</label>
+            <div class="stepper"><button>−</button><div class="v">3</div><button>+</button></div>
+            <label class="lbl">Children</label>
+            <div class="seg"><button>No</button><button aria-pressed="true">Yes</button></div>
+            <label class="lbl">Work from home</label>
+            <div class="seg"><button>No</button><button aria-pressed="true">Yes — 1 office</button></div>
+            <label class="lbl">Accessibility needs</label>
+            <input class="field" value="Step-free ground floor" />
+          </div>
+        </div>
+
+        <div class="sec">
+          <button class="sec-head" type="button">
+            <span>Programme</span>
+            <span class="meta">8 rooms · 142 m²</span>
+          </button>
+          <div class="sec-body">
+            <table class="prog">
+              <thead><tr><th></th><th>Room</th><th class="num">m²</th><th>Priority</th></tr></thead>
+              <tbody>
+                <tr><td><input type="checkbox" checked></td><td><input type="text" value="Living"></td><td><input type="number" value="22"></td><td><span class="prio ess">Essential</span></td></tr>
+                <tr><td><input type="checkbox" checked></td><td><input type="text" value="Kitchen"></td><td><input type="number" value="14"></td><td><span class="prio ess">Essential</span></td></tr>
+                <tr><td><input type="checkbox" checked></td><td><input type="text" value="Master bed"></td><td><input type="number" value="16"></td><td><span class="prio ess">Essential</span></td></tr>
+                <tr><td><input type="checkbox" checked></td><td><input type="text" value="Bed 2"></td><td><input type="number" value="11"></td><td><span class="prio des">Desired</span></td></tr>
+                <tr><td><input type="checkbox" checked></td><td><input type="text" value="Bath"></td><td><input type="number" value="6"></td><td><span class="prio ess">Essential</span></td></tr>
+                <tr><td><input type="checkbox"></td><td><input type="text" value="Study nook"></td><td><input type="number" value="5"></td><td><span class="prio opt">Optional</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="sec">
+          <button class="sec-head" type="button">
+            <span>Style</span>
+            <span class="meta">Japanese/Persian</span>
+          </button>
+          <div class="sec-body">
+            <label class="lbl">Aesthetic</label>
+            <input class="field" value="Japanese / Persian courtyard">
+            <label class="lbl">Materials</label>
+            <textarea class="field">Lime render, brushed oak, charcoal terrazzo, terracotta tile.</textarea>
+          </div>
+        </div>
+
+        <div class="sec"><button class="sec-head" type="button"><span>Site notes</span><span class="meta">3 lines</span></button></div>
+        <div class="sec"><button class="sec-head" type="button"><span>Design priorities</span><span class="meta">5 ranked</span></button></div>
+      </div>
+    </div>
+
+    <!-- CENTRE: canvas -->
+    <div style="display:flex; flex-direction:column; min-width:0;">
+      <div class="toolbar">
+        <div class="tb-group">
+          <button class="iconbtn" aria-pressed="true" title="Select (V)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3l13 8-5 1 3 7-2 1-3-7-4 3z"/></svg></button>
+          <button class="iconbtn" title="Pan (H)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 11V6a2 2 0 1 1 4 0v3M9 6V4a2 2 0 1 1 4 0v6M13 6V5a2 2 0 1 1 4 0v8M17 8a2 2 0 1 1 4 0v6a7 7 0 0 1-7 7H10a4 4 0 0 1-3-1.5L3 14"/></svg></button>
+          <button class="iconbtn" title="Add wall"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 4h18M3 12h18M3 20h18"/></svg></button>
+          <button class="iconbtn" title="Measure"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 10l4-4 14 14-4 4z M7 14l2-2 M11 10l2-2 M15 14l2-2"/></svg></button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-group">
+          <button class="iconbtn" title="Undo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 14l-4-4 4-4 M5 10h9a5 5 0 0 1 0 10H9"/></svg></button>
+          <button class="iconbtn" title="Redo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 14l4-4-4-4 M19 10h-9a5 5 0 0 0 0 10h5"/></svg></button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="zoom">
+          <button>−</button>
+          <span class="v mono">22 px/m</span>
+          <button>+</button>
+        </div>
+        <div class="tb-sep"></div>
+        <button class="iconbtn" aria-pressed="true" title="Grid"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></button>
+        <button class="iconbtn" title="Snap"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M7 7l3 3M14 14l3 3M14 10l3-3M7 17l3-3"/></svg></button>
+        <button class="iconbtn" title="Layers"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l10 6-10 6L2 8z M2 14l10 6 10-6"/></svg> Layers</button>
+        <div class="tb-sep"></div>
+        <button class="iconbtn" title="Theme"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg></button>
+        <button class="iconbtn" title="Export"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v12 M7 8l5-5 5 5 M5 21h14"/></svg></button>
+
+        <div class="progress" title="Essential rooms placed">
+          <span>5 of 6 essentials placed</span>
+          <div class="bar"><i style="width:83%"></i></div>
+          <span class="mono num">83%</span>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <div class="ruler-x"><span>0</span><span style="margin-left:120px">5m</span><span style="margin-left:160px">10m</span></div>
+        <div class="ruler-y"><span>0</span><span style="margin-top:120px">10m</span><span style="margin-top:160px">20m</span><span style="margin-top:160px">30m</span></div>
+
+        <div class="lot">
+          <div class="lot-tag">LOT · 9.4 × 33.5 m · 314 m²</div>
+          <div class="lot-dim-w">9.4 m</div>
+          <div class="lot-dim-h">33.5 m</div>
+
+          <div class="room living"  style="left:14px; top:48px; width:200px; height:120px;">
+            <div class="lab">Living</div><div class="a2">5.5 × 4.0 m · 22 m²</div>
+          </div>
+          <div class="room kitchen" style="left:14px; top:172px; width:200px; height:80px;">
+            <div class="lab">Kitchen</div><div class="a2">5.5 × 2.6 m · 14 m²</div>
+          </div>
+          <div class="room outdoor" style="left:14px; top:256px; width:200px; height:96px;">
+            <div class="lab">Courtyard</div><div class="a2">5.5 × 3.1 m</div>
+          </div>
+          <div class="room bed selected" style="left:14px; top:432px; width:200px; height:130px;">
+            <div class="lab">Master bed</div><div class="a2">5.5 × 3.6 m · 19.8 m²</div>
+            <div class="handle tl"></div><div class="handle tr"></div><div class="handle bl"></div><div class="handle br"></div>
+            <div class="handle t"></div><div class="handle b"></div><div class="handle l"></div><div class="handle r"></div>
+          </div>
+          <div class="room bed" style="left:14px; top:566px; width:130px; height:100px;">
+            <div class="lab">Bed 2</div><div class="a2">3.6 × 2.8 m</div>
+          </div>
+          <div class="room wet" style="left:148px; top:566px; width:66px; height:100px;">
+            <div class="lab">Bath</div><div class="a2">1.8 × 2.8</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: metrics + critic + inspector -->
+    <div class="panel right">
+      <div class="metrics">
+        <div class="kpi">
+          <span class="num">114</span>
+          <span class="unit">/ 189 m²</span>
+          <span class="delta">Footprint</span>
+        </div>
+        <div class="gauge"><i style="width:60%"></i><span class="lim"></span></div>
+
+        <div class="breakdown">
+          <div class="k" style="--swatch:#c4a85a">Living + Kitchen</div><div class="v">36 m²</div>
+          <div class="k" style="--swatch:#7a9a6e">Sleeping</div><div class="v">42 m²</div>
+          <div class="k" style="--swatch:#6e8a96">Wet rooms</div><div class="v">8 m²</div>
+          <div class="k" style="--swatch:#8a9c70">Outdoor</div><div class="v">28 m²</div>
+        </div>
+      </div>
+
+      <div class="alerts">
+        <div class="alert err"><svg class="ico-sm ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><div>Missing essential: <strong style="color:var(--tx)">Bed 2 bathroom</strong></div></div>
+        <div class="alert warn"><svg class="ico-sm ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg><div>Setback violation: south boundary (-0.4 m)</div></div>
+        <div class="alert"><svg class="ico-sm ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><div>Courtyard does not face north — review brief priority #2</div></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab" aria-selected="true">Inspector</button>
+        <button class="tab">Palette</button>
+        <button class="tab">Critic</button>
+      </div>
+
+      <div class="inspector-card">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <span style="width:10px; height:10px; border-radius:2px; background:#7a9a6e"></span>
+          <input class="field" style="height:30px; flex:1" value="Master bed" />
+        </div>
+        <div class="row-2">
+          <div><label class="lbl">Width</label><input class="field mono" value="5.50 m" /></div>
+          <div><label class="lbl">Depth</label><input class="field mono" value="3.60 m" /></div>
+        </div>
+        <label class="lbl">Rotation</label>
+        <div class="seg" style="height:30px"><button aria-pressed="true">0°</button><button>90°</button><button>180°</button><button>270°</button></div>
+
+        <div style="margin-top:12px">
+          <div class="insp-row"><span>Area</span><span class="v">19.80 m²</span></div>
+          <div class="insp-row"><span>Category</span><span class="v" style="font-family:inherit">Sleeping</span></div>
+          <div class="insp-row"><span>Layer</span><span class="v" style="font-family:inherit">Ground floor</span></div>
+          <div class="insp-row"><span>Lock position</span><span class="v" style="font-family:inherit">Off</span></div>
+        </div>
+        <button class="ghost-btn">
+          <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+          Remove room
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+</template>
+
+
+<template id="tpl-b">
+<div class="app b">
+  <div class="shell">
+
+    <!-- LEFT -->
+    <div class="panel">
+      <div class="brand">
+        <div class="mark"></div>
+        <div class="name">Lej<em>plauu</em></div>
+      </div>
+      <div class="project">
+        <div class="label">Brief</div>
+        <div class="name">Bondi Junction<br/>terrace</div>
+        <div class="meta"><span>314 m² lot</span><span class="dot"></span><span>South-facing rear</span><span class="dot"></span><span>v3</span></div>
+      </div>
+
+      <div style="overflow:auto; flex:1; min-height:0;">
+        <div class="sec">
+          <div class="sec-head"><span class="sec-title">Household</span><span class="sec-meta">3 + dog</span></div>
+          <label class="lbl">Occupants</label>
+          <div class="stepper"><button>−</button><div class="v">3</div><button>+</button></div>
+          <label class="lbl">Work from home</label>
+          <div class="seg"><button>No</button><button aria-pressed="true">Yes</button></div>
+          <label class="lbl">Accessibility</label>
+          <input class="field" value="Step-free ground floor" />
+        </div>
+
+        <div class="sec">
+          <div class="sec-head"><span class="sec-title">Programme</span><span class="sec-meta serif" style="font-size:14px">142 m²</span></div>
+          <table class="prog">
+            <tbody>
+              <tr><td><div class="nm"><div class="check on">✓</div>Living</div></td><td class="area">22</td><td><span class="chip ess">Essential</span></td></tr>
+              <tr><td><div class="nm"><div class="check on">✓</div>Kitchen</div></td><td class="area">14</td><td><span class="chip ess">Essential</span></td></tr>
+              <tr><td><div class="nm"><div class="check on">✓</div>Master bed</div></td><td class="area">16</td><td><span class="chip ess">Essential</span></td></tr>
+              <tr><td><div class="nm"><div class="check on">✓</div>Bed 2</div></td><td class="area">11</td><td><span class="chip des">Desired</span></td></tr>
+              <tr><td><div class="nm"><div class="check on">✓</div>Bath</div></td><td class="area">6</td><td><span class="chip ess">Essential</span></td></tr>
+              <tr><td><div class="nm"><div class="check"></div>Study nook</div></td><td class="area">5</td><td><span class="chip opt">Optional</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sec">
+          <div class="sec-head"><span class="sec-title">Style</span></div>
+          <label class="lbl">Aesthetic</label>
+          <input class="field" value="Japanese / Persian courtyard" />
+          <label class="lbl">Materials</label>
+          <textarea class="field">Lime render, brushed oak, charcoal terrazzo, hand-thrown terracotta tile.</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTRE -->
+    <div style="display:flex; flex-direction:column; min-width:0;">
+      <div class="canvas-head">
+        <div>
+          <div class="h-title">Plan study</div>
+          <div class="h-sub mono">9.4 × 33.5 m · scale 1:50</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="iconbtn ghost"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 14l-4-4 4-4 M5 10h9a5 5 0 0 1 0 10H9"/></svg> Undo</button>
+        <button class="iconbtn ghost"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 14l4-4-4-4 M19 10h-9a5 5 0 0 0 0 10h5"/></svg> Redo</button>
+        <button class="iconbtn ghost"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l10 6-10 6L2 8z M2 14l10 6 10-6"/></svg> Layers · 3</button>
+        <button class="iconbtn primary"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg> Place room</button>
+      </div>
+
+      <div class="canvas-wrap">
+        <div class="toolrail">
+          <button class="iconbtn" aria-pressed="true" title="Select"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3l13 8-5 1 3 7-2 1-3-7-4 3z"/></svg></button>
+          <button class="iconbtn" title="Pan"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 11V6a2 2 0 1 1 4 0v3M9 6V4a2 2 0 1 1 4 0v6M13 6V5a2 2 0 1 1 4 0v8M17 8a2 2 0 1 1 4 0v6a7 7 0 0 1-7 7H10a4 4 0 0 1-3-1.5L3 14"/></svg></button>
+          <button class="iconbtn" title="Wall"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 18h16"/></svg></button>
+          <button class="iconbtn" title="Measure"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 10l4-4 14 14-4 4z M7 14l2-2 M11 10l2-2 M15 14l2-2"/></svg></button>
+          <div style="height:1px; background:var(--bd); margin:4px 6px"></div>
+          <button class="iconbtn" title="Grid"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></button>
+          <button class="iconbtn" title="Sun"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></button>
+        </div>
+
+        <div class="lot">
+          <div class="lot-tag">Lot — 9.4 × 33.5 m</div>
+          <div class="lot-dim mono">314 m² · setback N 1.0 / S 0 / F 3.5 / R 5.0</div>
+
+          <div class="room living"  style="left:14px; top:48px; width:200px; height:120px;">
+            <div class="lab">Living</div><div class="a2">22 m²</div>
+          </div>
+          <div class="room kitchen" style="left:14px; top:172px; width:200px; height:80px;">
+            <div class="lab">Kitchen</div><div class="a2">14 m²</div>
+          </div>
+          <div class="room outdoor" style="left:14px; top:256px; width:200px; height:108px;">
+            <div class="lab">Courtyard</div><div class="a2">17 m²</div>
+          </div>
+          <div class="room bed selected" style="left:14px; top:436px; width:200px; height:130px;">
+            <div class="lab">Master bed</div><div class="a2">19.8 m²</div>
+          </div>
+          <div class="room bed" style="left:14px; top:580px; width:128px; height:100px;">
+            <div class="lab">Bed 2</div><div class="a2">11 m²</div>
+          </div>
+          <div class="room wet" style="left:148px; top:580px; width:66px; height:100px;">
+            <div class="lab">Bath</div><div class="a2">6 m²</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="panel right">
+      <div class="pn" data-collapsed="false">
+      <button class="pn-head" type="button">
+        <span class="grip"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="lab">Footprint</span>
+        <span class="meta serif" style="font-size:14px">60%</span>
+        <span class="chev"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></span>
+      </button>
+      <div class="pn-body metrics" style="border-bottom:none; padding-top:6px">
+        <div class="big">
+          <span class="v">114</span>
+          <span class="of">/ 189 m²</span>
+          <span class="pct">60%</span>
+        </div>
+        <div class="gauge"><i></i></div>
+        <div class="breakdown">
+          <div class="k" style="--swatch:#c4a85a">Living &amp; cooking</div><div class="v">36 m²</div>
+          <div class="k" style="--swatch:#7a9a6e">Sleeping</div><div class="v">42 m²</div>
+          <div class="k" style="--swatch:#6e8a96">Wet rooms</div><div class="v">8 m²</div>
+          <div class="k" style="--swatch:#9bab6a">Outdoor</div><div class="v">28 m²</div>
+        </div>
+      </div>
+      </div>
+
+      <div class="pn" data-dragging="true" data-collapsed="false">
+      <button class="pn-head" type="button">
+        <span class="grip"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="lab">Issues</span>
+        <span class="meta">2</span>
+        <span class="chev"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></span>
+      </button>
+      <div class="pn-body alerts" style="border-bottom:none">
+        <div class="alert err">
+          <div class="ic"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 8v4M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <div class="body"><strong>Missing essential</strong>Bed 2 has no adjacent bath</div>
+        </div>
+        <div class="alert warn">
+          <div class="ic"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l10 18H2z"/></svg></div>
+          <div class="body"><strong>Setback</strong>South boundary at -0.4 m</div>
+        </div>
+      </div>
+      </div>
+
+      <div class="pn" data-collapsed="true">
+      <button class="pn-head" type="button">
+        <span class="grip"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="lab">Inspector</span>
+        <span class="meta">Master bed · 19.8 m²</span>
+        <span class="chev"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></span>
+      </button>
+      <div class="pn-body" style="padding:0 18px 14px"></div>
+      </div>
+
+      <div class="tabs" style="margin-top:auto">
+        <button class="tab" aria-selected="true">Critic</button>
+        <button class="tab">Palette</button>
+        <button class="tab">Inspector</button>
+      </div>
+
+      <div class="crit">
+        <div class="ask">
+          <div class="hd">
+            <div class="av">C</div>
+            <div class="nm">Critic</div>
+            <span class="st">Ready</span>
+          </div>
+          <div style="font-size:12.5px; color:var(--tx-2);">Reviewing your <em class="serif">brief</em> against the placed plan.</div>
+          <div class="actions">
+            <button class="iconbtn primary" style="flex:1">Review layout</button>
+            <button class="iconbtn ghost" style="flex:1">Review brief</button>
+          </div>
+          <div class="input">
+            <input placeholder="Ask about the plan…" />
+            <button>↑</button>
+          </div>
+        </div>
+
+        <div class="msg crit">
+          <div class="av">C</div>
+          <div class="body">
+            <div class="name">Critic <span style="color:var(--tx-3)">·  10:42</span></div>
+            <div class="text">
+              The <strong>master bed</strong> reads well at the rear, but its window faces the south wall of the neighbour. Consider:
+              <ul style="margin:6px 0 0; padding-left:18px;">
+                <li>Pulling the courtyard <em class="serif">further north</em> to bring morning light into the kitchen.</li>
+                <li>Inverting the bed/bath pairing so the bath stacks under the upstairs ensuite.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="msg user">
+          <div class="av">JZ</div>
+          <div class="body">
+            <div class="name">You <span style="color:var(--tx-3)">·  10:43</span></div>
+            <div class="text">Can the courtyard stay 3 m wide if I shift north by 600 mm?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</template>
+
+
+<template id="tpl-c">
+<div class="app c">
+  <div class="shell">
+
+    <!-- LEFT: workspace nav + brief -->
+    <div class="panel left">
+      <div class="brand">
+        <div class="mark">L</div>
+        <div>
+          <div class="name">LeJplauu</div>
+          <div class="ws">jzorrilla / Studio</div>
+        </div>
+      </div>
+
+      <div class="project">
+        <input class="name" value="Bondi Junction terrace" />
+        <div class="meta">
+          <span class="tag"><span class="dot g"></span>On track</span>
+          <span class="tag">v3</span>
+          <span class="tag mono">314 m²</span>
+        </div>
+      </div>
+
+      <div class="scroll">
+        <div class="nav">
+          <div class="group-h"><span>Project</span></div>
+          <div class="item active">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>
+            Plan
+            <span class="ct">3</span>
+          </div>
+          <div class="item">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+            Brief
+          </div>
+          <div class="item">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l10 6-10 6L2 8z M2 14l10 6 10-6"/></svg>
+            Layers
+            <span class="ct">3</span>
+          </div>
+          <div class="item">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            History
+          </div>
+
+          <div class="group-h">
+            <span>Programme · 5/6 placed</span>
+            <span class="add">+</span>
+          </div>
+
+          <div class="stack">
+            <div class="progrow"><div class="check on">✓</div><span class="nm">Living</span><span class="a2">22 m²</span><span class="pri ess"></span></div>
+            <div class="progrow"><div class="check on">✓</div><span class="nm">Kitchen</span><span class="a2">14 m²</span><span class="pri ess"></span></div>
+            <div class="progrow"><div class="check on">✓</div><span class="nm">Master bed</span><span class="a2">16 m²</span><span class="pri ess"></span></div>
+            <div class="progrow"><div class="check on">✓</div><span class="nm">Bed 2</span><span class="a2">11 m²</span><span class="pri des"></span></div>
+            <div class="progrow"><div class="check on">✓</div><span class="nm">Bath</span><span class="a2">6 m²</span><span class="pri ess"></span></div>
+            <div class="progrow"><div class="check"></div><span class="nm">Study nook</span><span class="a2">5 m²</span><span class="pri opt"></span></div>
+          </div>
+
+          <div class="group-h"><span>Style</span></div>
+          <div class="stack">
+            <div>
+              <div class="lbl">Aesthetic</div>
+              <input class="field" value="Japanese / Persian courtyard" />
+            </div>
+            <div>
+              <div class="lbl">Materials</div>
+              <input class="field" value="Lime render, oak, terrazzo, terracotta" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTRE -->
+    <div style="display:flex; flex-direction:column; min-width:0;">
+      <div class="topbar">
+        <div class="crumb-row">
+          <span>Plan</span>
+          <span class="sep-c">/</span>
+          <span class="here">Ground floor</span>
+        </div>
+        <div class="sep"></div>
+        <button class="iconbtn"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 14l-4-4 4-4 M5 10h9a5 5 0 0 1 0 10H9"/></svg></button>
+        <button class="iconbtn"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 14l4-4-4-4 M19 10h-9a5 5 0 0 0 0 10h5"/></svg></button>
+        <div class="sep"></div>
+        <button class="iconbtn">22 px/m</button>
+        <button class="iconbtn">100%</button>
+
+        <div class="right">
+          <span class="tag"><span class="dot a"></span>1 warning</span>
+          <span class="tag"><span class="dot r"></span>1 issue</span>
+          <div class="sep"></div>
+          <button class="iconbtn"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v12 M7 8l5-5 5 5 M5 21h14"/></svg> Export</button>
+          <button class="iconbtn primary"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3l13 8-5 1 3 7-2 1-3-7-4 3z"/></svg> Run critic <span class="kbd" style="border-color:rgba(255,255,255,.3); color:#fff">⌘ K</span></button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <div class="lot">
+          <div class="tag">LOT · 9.4 × 33.5 m</div>
+          <div class="dim">setback N 1.0 / S 0 / F 3.5 / R 5.0</div>
+
+          <div class="room living"  style="left:12px; top:46px; width:180px; height:120px;">
+            <div class="lab">Living</div><div class="a2">22 m²</div>
+          </div>
+          <div class="room kitchen" style="left:12px; top:172px; width:180px; height:80px;">
+            <div class="lab">Kitchen</div><div class="a2">14 m²</div>
+          </div>
+          <div class="room outdoor" style="left:12px; top:258px; width:180px; height:96px;">
+            <div class="lab">Courtyard</div><div class="a2">17 m²</div>
+          </div>
+          <div class="room bed selected" style="left:12px; top:432px; width:180px; height:130px;">
+            <div class="lab">Master bed</div><div class="a2">19.8 m²</div>
+          </div>
+          <div class="room bed" style="left:12px; top:570px; width:118px; height:100px;">
+            <div class="lab">Bed 2</div><div class="a2">11 m²</div>
+          </div>
+          <div class="room wet" style="left:136px; top:570px; width:56px; height:100px;">
+            <div class="lab">Bath</div><div class="a2">6 m²</div>
+          </div>
+        </div>
+
+        <div class="floating-tools">
+          <button class="iconbtn" aria-pressed="true" title="Select V"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3l13 8-5 1 3 7-2 1-3-7-4 3z"/></svg></button>
+          <button class="iconbtn" title="Pan H"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 11V6a2 2 0 1 1 4 0v3M9 6V4a2 2 0 1 1 4 0v6M13 6V5a2 2 0 1 1 4 0v8M17 8a2 2 0 1 1 4 0v6a7 7 0 0 1-7 7H10a4 4 0 0 1-3-1.5L3 14"/></svg></button>
+          <button class="iconbtn" title="Wall W"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 18h16"/></svg></button>
+          <button class="iconbtn" title="Measure M"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 10l4-4 14 14-4 4z"/></svg></button>
+          <div class="sep-v"></div>
+          <button class="iconbtn" title="Grid"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></button>
+          <button class="iconbtn" title="Snap"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="panel right">
+      <div class="head">
+        <div class="h">Status</div>
+        <div class="actions">
+          <button class="iconbtn"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg></button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card">
+          <div class="lbl">Footprint <span class="delta">+12 m² since v2</span></div>
+          <div class="v"><span class="num">114</span><span class="of">/ 189 m²</span><span class="pct">60%</span></div>
+          <div class="gauge"><i></i></div>
+        </div>
+        <div class="legend">
+          <div class="l" style="--swatch:rgba(255,180,90,.7)">Living<span class="v">22</span></div>
+          <div class="l" style="--swatch:rgba(255,140,80,.7)">Kitchen<span class="v">14</span></div>
+          <div class="l" style="--swatch:rgba(120,200,140,.7)">Sleeping<span class="v">42</span></div>
+          <div class="l" style="--swatch:rgba(94,170,255,.7)">Wet<span class="v">8</span></div>
+          <div class="l" style="--swatch:rgba(160,200,120,.7)">Outdoor<span class="v">28</span></div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab" aria-selected="true">Critic <span class="ct">2</span></button>
+        <button class="tab">Inspector</button>
+        <button class="tab">Issues <span class="ct">3</span></button>
+      </div>
+
+      <div class="crit">
+        <div class="crit-actions">
+          <button class="iconbtn">
+            <div class="col">
+              <span>Review layout</span>
+              <span class="sub">Claude · 5 rooms placed</span>
+            </div>
+          </button>
+          <button class="iconbtn">
+            <div class="col">
+              <span>Review brief</span>
+              <span class="sub">Claude · 8 fields</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="crit-thread">
+          <div class="msg user">
+            <div class="av">JZ</div>
+            <div class="body">
+              <div class="name"><strong>You</strong><span class="t">10:41</span></div>
+              <div class="text">Review the current layout</div>
+            </div>
+          </div>
+
+          <div class="msg crit">
+            <div class="av">C</div>
+            <div class="body">
+              <div class="name"><strong>Critic</strong><span class="t">10:42 · streaming</span></div>
+              <div class="text">
+                Strong overall — the linear progression from <strong>street → living → courtyard → sleeping</strong> reads as intentional and matches your <strong>privacy-by-depth</strong> priority.
+                <div class="h">Two things I'd push on:</div>
+                <ul>
+                  <li>The courtyard sits between cooking and sleeping but is <strong>4 m</strong> deep — a 3 m courtyard would buy you a generous study nook without breaking the rhythm.</li>
+                  <li>Bath is on the south boundary, which traps service piping in the worst-light wall. Consider stacking it with the upstairs ensuite.</li>
+                </ul>
+              </div>
+              <div class="reactions">
+                <button class="iconbtn">👍 Helpful</button>
+                <button class="iconbtn">Apply suggestion</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="box">
+            <textarea placeholder="Ask about the plan, brief, or constraints…">Can the courtyard stay 3 m wide if I shift north by 600 mm?</textarea>
+            <div class="row">
+              <button class="iconbtn"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+              <button class="iconbtn"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 11.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h11.5"/><path d="M7 9h10M7 13h6"/></svg> Attach plan</button>
+              <span class="spacer"></span>
+              <span class="kbd">⏎</span>
+              <button class="send">Send <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</template>
+
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function Mock({ tplId, addClass }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (!ref.current) return;
+    const t = document.getElementById(tplId);
+    ref.current.innerHTML = '';
+    const frag = t.content.cloneNode(true);
+    if (addClass) {
+      const root = frag.querySelector('.app');
+      if (root) root.classList.add(...addClass.split(' '));
+    }
+    ref.current.appendChild(frag);
+  }, [tplId, addClass]);
+  return <div ref={ref} style={{ width:'100%', height:'100%' }} />;
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <DesignCanvas title="LeJplauu — Warm Studio (dark)"
+    subtitle="Direction B reworked for dark mode. Originals kept below for reference.">
+    <DCSection id="picked" title="Warm Studio · dark">
+      <DCArtboard id="b-dark" label="B (dark) — warm dark earth, terracotta + sage accents, Instrument Serif numerals" width={1500} height={880}>
+        <Mock tplId="tpl-b" addClass="dark" />
+      </DCArtboard>
+    </DCSection>
+    <DCSection id="ref" title="Earlier directions (for reference)">
+      <DCArtboard id="b-light" label="B (light) — original warm studio" width={1500} height={880}>
+        <Mock tplId="tpl-b" />
+      </DCArtboard>
+      <DCArtboard id="a" label="A — Refined CAD" width={1500} height={880}>
+        <Mock tplId="tpl-a" />
+      </DCArtboard>
+      <DCArtboard id="c" label="C — Modern Dashboard" width={1500} height={880}>
+        <Mock tplId="tpl-c" />
+      </DCArtboard>
+    </DCSection>
+  </DesignCanvas>
+);
+</script>
+</body>
+</html>
