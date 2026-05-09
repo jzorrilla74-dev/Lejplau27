@@ -1,5 +1,8 @@
 {
   "permissions": {
-    "defaultMode": "bypassPermissions"
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "mcp__github__get_file_contents"
+    ]
   }
 }
