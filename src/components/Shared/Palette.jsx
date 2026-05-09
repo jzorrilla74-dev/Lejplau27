@@ -35,8 +35,11 @@ export default function Palette() {
         rotation: 0,
         category: def.category,
         locked: false,
+        filled: true,
         notes: '',
-        layerId: def.category === 'furniture' ? 'furniture' : activeLayerId,
+        layerId: def.category === 'furniture' ? 'furniture'
+               : def.category === 'openings'  ? 'structure'
+               : activeLayerId,
       },
     });
   }

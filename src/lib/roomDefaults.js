@@ -1,16 +1,16 @@
 export const CAT_STYLES = {
-  sleeping:    { fill: '#243121', stroke: '#3e5236' },
-  bathroom:    { fill: '#1f2a30', stroke: '#34464f' },
-  work:        { fill: '#2a2435', stroke: '#4a3f6a' },
-  social:      { fill: '#3a2f1a', stroke: '#5a4a28' },
-  outdoor:     { fill: '#27321f', stroke: '#3e4f30' },
-  transition:  { fill: '#252830', stroke: '#3a4050' },
-  circulation: { fill: '#2a2418', stroke: '#4a3c24' },
-  service:     { fill: '#3f2c18', stroke: '#6a4a26' },
-  furniture:   { fill: '#282420', stroke: '#4a3e30' },
-  structural:  { fill: '#3a3a3a', stroke: '#555555' },
-  openings:    { fill: '#ffffff', stroke: '#2A9D8F' },
-  softscape:   { fill: '#C8E6C9', stroke: '#388E3C' },
+  sleeping:    { fill: '#3D2B1F', stroke: '#8B6B5A' },
+  bathroom:    { fill: '#1F2D3D', stroke: '#5A7B8B' },
+  work:        { fill: '#2B2040', stroke: '#7B6BAA' },
+  social:      { fill: '#1F3D2B', stroke: '#5A8B6B' },
+  outdoor:     { fill: '#253318', stroke: '#6B8B4A' },
+  transition:  { fill: '#1F2B33', stroke: '#4A7B8B' },
+  circulation: { fill: '#332B1A', stroke: '#8B7A5A' },
+  service:     { fill: '#2B2B2B', stroke: '#6B6B6B' },
+  structural:  { fill: '#111111', stroke: '#444444' },
+  openings:    { fill: '#FFFFFF', stroke: '#7B9E87' },
+  softscape:   { fill: '#253318', stroke: '#6B9B4A' },
+  furniture:   { fill: '#2B2520', stroke: '#5A4A3A' },
 };
 
 const defs = [

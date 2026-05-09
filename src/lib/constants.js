@@ -6,8 +6,9 @@ export const BLOCK = {
   maxFootprintM2: 189,
   partyWall: { startM: 9.37, lengthM: 8.25 },
 };
-export const GRID_M = 0.5;
-export const FINE_GRID_M = 0.1;
+export const GRID_M = 0.1;
+export const FINE_GRID_M = 0.01;
+export const VISUAL_GRID_M = 0.5;
 export const SCALE_DEFAULT = 22;
 export const SCALE_MIN = 8;
 export const SCALE_MAX = 60;

@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BriefProvider, useBrief } from './context/BriefContext';
 import { LayoutProvider, useLayout } from './context/LayoutContext';
-import { LayerProvider } from './context/LayerContext';
+import { LayerProvider, useLayers } from './context/LayerContext';
 import { CanvasProvider, useCanvas } from './context/CanvasContext';
 import { CriticProvider } from './context/CriticContext';
+import { FirestoreProvider } from './context/FirestoreContext';
+import { useFirestoreStatus } from './context/FirestoreContext';
+import { saveToFirestore, loadFromFirestore } from './lib/firebase';
 import BriefPanel from './components/Brief/BriefPanel';
 import CanvasPanel from './components/Canvas/CanvasPanel';
 import Metrics from './components/Shared/Metrics';
@@ -14,39 +17,77 @@ import { v4 as uuidv4 } from 'uuid';
 
 function AllProviders({ children }) {
   return (
-    <BriefProvider>
-      <LayoutProvider>
-        <LayerProvider>
-          <CanvasProvider>
-            <CriticProvider>
-              {children}
-            </CriticProvider>
-          </CanvasProvider>
-        </LayerProvider>
-      </LayoutProvider>
-    </BriefProvider>
+    <FirestoreProvider>
+      <BriefProvider>
+        <LayoutProvider>
+          <LayerProvider>
+            <CanvasProvider>
+              <CriticProvider>
+                {children}
+              </CriticProvider>
+            </CanvasProvider>
+          </LayerProvider>
+        </LayoutProvider>
+      </BriefProvider>
+    </FirestoreProvider>
   );
 }
 
 function AppInner() {
   const { theme, selectedUid, dispatch: cDispatch } = useCanvas();
-  const { dispatch: lDispatch, rooms } = useLayout();
+  const { dispatch: lDispatch, rooms, partyWallStartM } = useLayout();
+  const { layers, dispatch: layDispatch } = useLayers();
+  const { state: brief, dispatch: bDispatch } = useBrief();
+  const { setStatus, setLastSaved } = useFirestoreStatus();
   const [rightTab, setRightTab] = useState('rooms');
   const [briefOpen, setBriefOpen] = useState(() => localStorage.getItem('brief_open') !== 'false');
+  const saveTimerRef = useRef(null);
+  const pendingRef = useRef(false);
 
   // Apply dark/light class to html
   useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light');
   }, [theme]);
 
+  // Load from Firestore on mount
+  useEffect(() => {
+    loadFromFirestore().then(data => {
+      if (!data) return;
+      if (data.rooms) lDispatch({ type: 'LOAD_LAYOUT', rooms: data.rooms, partyWallStartM: data.partyWallStartM });
+      if (data.layers) layDispatch({ type: 'REORDER', layers: data.layers });
+      if (data.brief) bDispatch({ type: 'REPLACE_STATE', state: data.brief });
+      if (data.theme && data.theme !== theme) cDispatch({ type: 'TOGGLE_THEME' });
+    });
+  }, []); // eslint-disable-line
+
+  // Auto-save debounce
+  async function doSave() {
+    if (!pendingRef.current) return;
+    pendingRef.current = false;
+    setStatus('saving');
+    const ok = await saveToFirestore({ rooms, brief, layers, partyWallStartM, theme, version: 2 });
+    setStatus(ok ? 'saved' : 'error');
+    if (ok) setLastSaved(new Date());
+  }
+
+  useEffect(() => {
+    pendingRef.current = true;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(doSave, 30000);
+  }, [rooms, brief]); // eslint-disable-line
+
   // Global keyboard shortcuts
   useEffect(() => {
     function onKey(e) {
       const meta = e.metaKey || e.ctrlKey;
 
+      if (meta && e.key === '0') {
+        e.preventDefault();
+        cDispatch({ type: 'REQUEST_FIT' });
+        return;
+      }
       if (meta && e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault();
-        // redo is handled in LayoutContext
         return;
       }
       if (meta && e.key === 'z') {

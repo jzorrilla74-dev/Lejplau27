@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Layer, Group, Rect, Text, Circle, Line } from 'react-konva';
 import { CAT_STYLES } from '../../lib/roomDefaults';
 import { BLOCK, GRID_M, FINE_GRID_M } from '../../lib/constants';
@@ -11,8 +11,8 @@ const RULER_PX = 20;
 const MARGIN = 8;
 const HANDLE_SIZE = 8;
 const MIN_ROOM_M = 0.5;
+const SNAP_OBJ_DIST = 0.3;
 
-// buildable envelope in metres
 const ENV = {
   x1: BLOCK.setbacks.north,
   x2: BLOCK.widthM,
@@ -36,8 +36,9 @@ function clamp(val, min, max) {
 export default function RoomLayer({ stageRef, setCtxMenu }) {
   const { scale, selectedUid, theme, dispatch: cDispatch } = useCanvas();
   const { rooms, dispatch: lDispatch } = useLayout();
-  const { layers } = useLayers();
+  const { layers, activeLayerId } = useLayers();
   const shiftRef = useRef(false);
+  const [snapGuides, setSnapGuides] = useState({ x: [], y: [] });
 
   const BX = RULER_PX + MARGIN;
   const BY = RULER_PX + MARGIN;
@@ -57,14 +58,6 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
   const warnUids = new Set(warnings.filter(w => w.uid).map(w => w.uid));
   const overlapUids = new Set(warnings.filter(w => w.type === 'overlap' && w.uid).map(w => w.uid));
 
-  function toCanvas(xm, ym) {
-    return { x: BX + xm * scale, y: BY + ym * scale };
-  }
-
-  function toMetres(px, py) {
-    return { xm: (px - BX) / scale, ym: (py - BY) / scale };
-  }
-
   function handleDragStart(e, room) {
     if (room.locked) return e.target.stopDrag();
     shiftRef.current = e.evt.shiftKey;
@@ -73,32 +66,34 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
 
   function handleDragMove(e, room) {
     const node = e.target;
-    const grid = (e.evt.shiftKey ? FINE_GRID_M : GRID_M);
+    const grid = e.evt.shiftKey ? FINE_GRID_M : GRID_M;
     const pos = node.position();
     let xm = snapTo((pos.x - BX) / scale, grid);
     let ym = snapTo((pos.y - BY) / scale, grid);
 
-    if (room.category === 'structural') {
-      const SNAP_DIST = 0.15;
-      let bestDx = SNAP_DIST + 1, bestDy = SNAP_DIST + 1;
-      for (const other of rooms) {
-        if (other.uid === room.uid) continue;
-        const edges = [other.x, other.x + other.w];
-        for (const ex of edges) {
-          const d = Math.abs(xm - ex);
-          if (d < bestDx) { bestDx = d; xm = ex; }
-          const d2 = Math.abs(xm + room.w - ex);
-          if (d2 < bestDx) { bestDx = d2; xm = ex - room.w; }
-        }
-        const edgesY = [other.y, other.y + other.d];
-        for (const ey of edgesY) {
-          const d = Math.abs(ym - ey);
-          if (d < bestDy) { bestDy = d; ym = ey; }
-          const d2 = Math.abs(ym + room.d - ey);
-          if (d2 < bestDy) { bestDy = d2; ym = ey - room.d; }
-        }
+    // snap-to-object edges for ALL rooms
+    const guideX = [];
+    const guideY = [];
+    let bestDx = SNAP_OBJ_DIST + 1;
+    let bestDy = SNAP_OBJ_DIST + 1;
+    for (const other of rooms) {
+      if (other.uid === room.uid) continue;
+      for (const ex of [other.x, other.x + other.w]) {
+        const dLeft  = Math.abs(xm - ex);
+        const dRight = Math.abs(xm + room.w - ex);
+        if (dLeft < bestDx)  { bestDx = dLeft;  xm = ex; }
+        if (dRight < bestDx) { bestDx = dRight; xm = ex - room.w; }
+      }
+      for (const ey of [other.y, other.y + other.d]) {
+        const dTop    = Math.abs(ym - ey);
+        const dBottom = Math.abs(ym + room.d - ey);
+        if (dTop < bestDy)    { bestDy = dTop;    ym = ey; }
+        if (dBottom < bestDy) { bestDy = dBottom; ym = ey - room.d; }
       }
     }
+    if (bestDx <= SNAP_OBJ_DIST) guideX.push(BX + xm * scale);
+    if (bestDy <= SNAP_OBJ_DIST) guideY.push(BY + ym * scale);
+    setSnapGuides({ x: guideX, y: guideY });
 
     const cx = clamp(xm, ENV.x1, ENV.x2 - room.w);
     const cy = clamp(ym, ENV.y1, ENV.y2 - room.d);
@@ -108,9 +103,10 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
 
   function handleDragEnd(e, room) {
     const node = e.target;
-    const xm = (node.x() - BX) / scale;
-    const ym = (node.y() - BY) / scale;
-    lDispatch({ type: 'UPDATE_ROOM', uid: room.uid, patch: { x: +xm.toFixed(2), y: +ym.toFixed(2) } });
+    const xm = +(Math.round((node.x() - BX) / scale / GRID_M) * GRID_M).toFixed(3);
+    const ym = +(Math.round((node.y() - BY) / scale / GRID_M) * GRID_M).toFixed(3);
+    lDispatch({ type: 'UPDATE_ROOM', uid: room.uid, patch: { x: xm, y: ym } });
+    setSnapGuides({ x: [], y: [] });
   }
 
   function handleResizeHandle(e, room, handleType) {
@@ -141,13 +137,12 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
         if (newD > MIN_ROOM_M) { y = newY; d = newD; }
       }
 
-      // clamp to envelope
       x = clamp(x, ENV.x1, ENV.x2 - MIN_ROOM_M);
       y = clamp(y, ENV.y1, ENV.y2 - MIN_ROOM_M);
       w = Math.min(w, ENV.x2 - x);
       d = Math.min(d, ENV.y2 - y);
 
-      lDispatch({ type: 'UPDATE_ROOM', uid: room.uid, patch: { x: +x.toFixed(2), y: +y.toFixed(2), w: +w.toFixed(2), d: +d.toFixed(2) } });
+      lDispatch({ type: 'UPDATE_ROOM', uid: room.uid, patch: { x: +x.toFixed(3), y: +y.toFixed(3), w: +w.toFixed(3), d: +d.toFixed(3) } });
     }
 
     function onUp() {
@@ -163,22 +158,23 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
   const visibleRooms = rooms
     .filter(r => visibleLayerIds.has(r.layerId))
     .sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
-  const baseRooms = visibleRooms.filter(r => r.category !== 'openings' && r.category !== 'furniture');
+  const baseRooms      = visibleRooms.filter(r => r.category !== 'openings' && r.category !== 'furniture');
   const furnitureRooms = visibleRooms.filter(r => r.category === 'furniture');
-  const openingRooms = visibleRooms.filter(r => r.category === 'openings');
+  const openingRooms   = visibleRooms.filter(r => r.category === 'openings');
 
   function renderRoom(room) {
-    const catStyle = CAT_STYLES[room.category] || CAT_STYLES.service;
-    const isSelected = selectedUid === room.uid;
-    const hasWarning = warnUids.has(room.uid);
-    const hasOverlap = overlapUids.has(room.uid);
-    const layer = layers.find(l => l.id === room.layerId);
-    const isStructural = room.category === 'structural';
-    const isFurniture = room.category === 'furniture';
-    const isOpening = room.category === 'openings';
-    const isSoftscape = room.category === 'softscape';
-    const layerOpacity = layer?.opacity ?? 1;
-    const structuralFill = theme === 'dark' ? '#3a3a3a' : '#888888';
+    const catStyle      = CAT_STYLES[room.category] || CAT_STYLES.service;
+    const isSelected    = selectedUid === room.uid;
+    const hasWarning    = warnUids.has(room.uid);
+    const hasOverlap    = overlapUids.has(room.uid);
+    const layer         = layers.find(l => l.id === room.layerId);
+    const isActiveLayer = layer?.id === activeLayerId;
+    const isStructural  = room.category === 'structural';
+    const isFurniture   = room.category === 'furniture';
+    const isOpening     = room.category === 'openings';
+    const isSoftscape   = room.category === 'softscape';
+    const structuralFill = theme === 'dark' ? '#222222' : '#888888';
+    const layerOpacity  = isActiveLayer ? 1.0 : (layer?.opacity ?? 1) * 0.85;
 
     const px = BX + room.x * scale;
     const py = BY + room.y * scale;
@@ -190,11 +186,19 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
     else if (hasWarning) strokeColor = '#f08020';
     if (isSelected) strokeColor = '#ffffff';
 
-    const strokeWidth = isSelected ? 2 : 1;
-    const showLabel = pw > 20 && pd > 20;
+    const strokeWidth = isSelected ? 2 : 1.5;
+    const showLabel   = pw > 20 && pd > 20;
 
     const cx = px + pw / 2;
     const cy = py + pd / 2;
+
+    const fillColor = isStructural
+      ? structuralFill
+      : isSoftscape
+        ? hexAlpha(catStyle.fill, room.filled !== false ? 0.40 : 0)
+        : room.filled !== false
+          ? hexAlpha(catStyle.fill, 0.15)
+          : 'transparent';
 
     function handleRotateStart(e) {
       e.cancelBubble = true;
@@ -221,6 +225,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
         x={cx} y={cy}
         offsetX={pw / 2} offsetY={pd / 2}
         rotation={room.rotation ?? 0}
+        opacity={layerOpacity}
         draggable={!room.locked && !layers.find(l => l.id === room.layerId)?.locked}
         onPointerDown={() => cDispatch({ type: 'SELECT_ROOM', uid: room.uid })}
         onDragStart={e => handleDragStart(e, room)}
@@ -235,28 +240,33 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
           <Circle
             x={pw / 2} y={pd / 2}
             radius={Math.min(pw, pd) / 2}
-            fill={hexAlpha(catStyle.fill, 0.40 * layerOpacity)}
+            fill={fillColor}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
           />
         ) : (
           <Rect
             width={pw} height={pd}
-            fill={isStructural ? structuralFill : hexAlpha(catStyle.fill, 0.10)}
+            fill={fillColor}
             stroke={strokeColor}
-            strokeWidth={isStructural ? 1.5 : 1.5}
-            opacity={layerOpacity}
+            strokeWidth={isStructural ? 2 : strokeWidth}
             cornerRadius={isStructural ? 0 : 2}
             dash={isFurniture ? [4, 3] : isOpening ? [2, 2] : undefined}
           />
         )}
+
+        {isActiveLayer && !isSoftscape && (
+          <Rect width={pw} height={pd} fill="transparent"
+            stroke="rgba(255,255,255,0.10)" strokeWidth={1} listening={false} />
+        )}
+
         {showLabel && (
           <>
             <Text
               x={4} y={pd / 2 - 14}
               width={pw - 8} text={room.label}
               fontSize={Math.min(13, pw / 5)}
-              fill="#f1ead9" align="center" listening={false}
+              fill="#e8e6de" align="center" listening={false}
             />
             <Text
               x={4} y={pd / 2 + 2}
@@ -264,7 +274,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
               text={`${room.w}×${room.d}m`}
               fontSize={Math.min(11, pw / 7)}
               fontFamily="'JetBrains Mono', monospace"
-              fill="#b6ab93" align="center" listening={false}
+              fill="#9c9a92" align="center" listening={false}
             />
           </>
         )}
@@ -281,19 +291,23 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
               { id: 'sw', hx: 0,    hy: pd   },
               { id: 'w',  hx: 0,    hy: pd/2 },
             ].map(h => (
-              <Rect
-                key={h.id}
-                x={h.hx - HANDLE_SIZE/2} y={h.hy - HANDLE_SIZE/2}
-                width={HANDLE_SIZE} height={HANDLE_SIZE}
-                fill="white" stroke={catStyle.stroke} strokeWidth={1}
-                onPointerDown={e => { e.cancelBubble = true; handleResizeHandle(e, room, h.id); }}
-              />
+              <Group key={h.id}>
+                <Rect
+                  x={h.hx - 10} y={h.hy - 10} width={20} height={20}
+                  fill="transparent"
+                  onPointerDown={e => { e.cancelBubble = true; handleResizeHandle(e, room, h.id); }}
+                />
+                <Rect
+                  x={h.hx - HANDLE_SIZE/2} y={h.hy - HANDLE_SIZE/2}
+                  width={HANDLE_SIZE} height={HANDLE_SIZE}
+                  fill="white" stroke={catStyle.stroke} strokeWidth={1} listening={false}
+                />
+              </Group>
             ))}
 
             <Rect
-              x={pw - 14} y={-14}
-              width={14} height={14}
-              fill="#e24b4a" cornerRadius={2}
+              x={pw - 14} y={-14} width={14} height={14}
+              fill="#C47B6B" cornerRadius={2}
               onPointerDown={e => {
                 e.cancelBubble = true;
                 lDispatch({ type: 'REMOVE_ROOM', uid: room.uid });
@@ -304,11 +318,9 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
             <Text x={pw/2 - 20} y={-14} width={40} text={`${room.w}m`} fontSize={9} fill="white" align="center" listening={false} />
             <Text x={pw + 2} y={pd/2 - 6} text={`${room.d}m`} fontSize={9} fill="white" listening={false} />
 
-            {/* rotation handle */}
             <Line points={[pw/2, 0, pw/2, -20]} stroke="white" strokeWidth={1} listening={false} />
             <Circle
-              x={pw/2} y={-26}
-              radius={6}
+              x={pw/2} y={-26} radius={6}
               fill="white" stroke={catStyle.stroke} strokeWidth={1}
               onPointerDown={handleRotateStart}
             />
@@ -327,6 +339,15 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
       {baseRooms.map(renderRoom)}
       {furnitureRooms.map(renderRoom)}
       {openingRooms.map(renderRoom)}
+
+      {snapGuides.x.map((xPx, i) => (
+        <Line key={`gx${i}`} points={[xPx, 0, xPx, 9999]}
+          stroke="#4A9EFF" strokeWidth={1} dash={[4, 3]} listening={false} />
+      ))}
+      {snapGuides.y.map((yPx, i) => (
+        <Line key={`gy${i}`} points={[0, yPx, 9999, yPx]}
+          stroke="#4A9EFF" strokeWidth={1} dash={[4, 3]} listening={false} />
+      ))}
     </Layer>
   );
 }

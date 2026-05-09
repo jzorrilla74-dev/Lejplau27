@@ -1,31 +1,33 @@
 import { useLayout } from '../../context/LayoutContext';
 import { useBrief } from '../../context/BriefContext';
 import { checkConstraints } from '../../lib/constraints';
+import { checkMelbourneCompliance } from '../../lib/melbourneRegs';
 import { BLOCK } from '../../lib/constants';
 
 export default function Metrics() {
-  const { rooms } = useLayout();
+  const { rooms, partyWallStartM } = useLayout();
   const { state: brief } = useBrief();
   const warnings = checkConstraints(rooms, BLOCK);
+  const compliance = checkMelbourneCompliance(rooms, BLOCK);
 
   const builtRooms = rooms.filter(r => r.category !== 'outdoor' && r.category !== 'furniture');
   const totalM2 = builtRooms.reduce((a, r) => a + r.w * r.d, 0);
   const coveragePct = (totalM2 / BLOCK.maxFootprintM2) * 100;
   const overLimit = coveragePct > 100;
 
-  // category breakdown
   const byCategory = {};
   rooms.filter(r => r.category !== 'furniture').forEach(r => {
     byCategory[r.category] = (byCategory[r.category] || 0) + r.w * r.d;
   });
 
-  // missing essential rooms
   const placedLabels = new Set(rooms.map(r => r.label.toLowerCase()));
   const missing = brief.programme.filter(p => p.checked && p.priority === 'essential' && !placedLabels.has(p.name.toLowerCase()));
 
   const coverageWarnings = warnings.filter(w => w.type === 'coverage');
-  const setbackWarnings = warnings.filter(w => w.type === 'setback');
-  const overlapWarnings = warnings.filter(w => w.type === 'overlap');
+  const setbackWarnings  = warnings.filter(w => w.type === 'setback');
+  const overlapWarnings  = warnings.filter(w => w.type === 'overlap');
+  const compErrors   = compliance.filter(w => w.severity === 'error');
+  const compWarnings = compliance.filter(w => w.severity === 'warning');
 
   return (
     <div style={{ padding: '8px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd)', fontSize: 11 }}>
@@ -40,9 +42,17 @@ export default function Metrics() {
         <div style={{
           height: '100%',
           width: `${Math.min(100, coveragePct)}%`,
-          background: overLimit ? 'var(--red)' : coveragePct > 80 ? '#f08020' : 'var(--green)',
+          background: overLimit ? 'var(--red)' : coveragePct > 80 ? 'var(--amber)' : 'var(--green)',
           borderRadius: 3, transition: 'width 0.3s',
         }} />
+      </div>
+
+      {/* party wall position */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 10 }}>
+        <span style={{ color: 'var(--tx2)' }}>Party wall</span>
+        <span style={{ color: 'var(--tx3)', fontFamily: 'var(--font-mono)' }}>
+          {partyWallStartM.toFixed(2)}m from street
+        </span>
       </div>
 
       {/* category breakdown */}
@@ -64,22 +74,41 @@ export default function Metrics() {
         <div style={{ marginBottom: 4 }}>
           <div style={{ color: 'var(--tx2)', fontSize: 10, marginBottom: 2 }}>Missing essentials:</div>
           {missing.map(p => (
-            <span key={p.id} style={{ display: 'inline-block', background: 'rgba(226,75,74,0.15)', color: 'var(--red)', borderRadius: 3, padding: '1px 4px', fontSize: 9, marginRight: 3, marginBottom: 2 }}>
+            <span key={p.id} style={{ display: 'inline-block', background: 'rgba(196,123,107,0.15)', color: 'var(--red)', borderRadius: 3, padding: '1px 4px', fontSize: 9, marginRight: 3, marginBottom: 2 }}>
               {p.name}
             </span>
           ))}
         </div>
       )}
 
-      {/* warnings */}
+      {/* constraint warnings */}
       {coverageWarnings.length > 0 && (
         <div style={{ color: 'var(--red)', fontSize: 10, marginBottom: 2 }}>⚠ {coverageWarnings[0].message}</div>
       )}
       {setbackWarnings.length > 0 && (
-        <div style={{ color: '#f08020', fontSize: 10, marginBottom: 2 }}>⚠ {setbackWarnings.length} setback violation{setbackWarnings.length > 1 ? 's' : ''}</div>
+        <div style={{ color: 'var(--amber)', fontSize: 10, marginBottom: 2 }}>⚠ {setbackWarnings.length} setback violation{setbackWarnings.length > 1 ? 's' : ''}</div>
       )}
       {overlapWarnings.length > 0 && (
-        <div style={{ color: '#f0c040', fontSize: 10 }}>⚠ {overlapWarnings.length / 2} overlap{overlapWarnings.length / 2 > 1 ? 's' : ''}</div>
+        <div style={{ color: '#f0c040', fontSize: 10, marginBottom: 4 }}>⚠ {overlapWarnings.length / 2} overlap{overlapWarnings.length / 2 > 1 ? 's' : ''}</div>
+      )}
+
+      {/* Melbourne compliance */}
+      {compliance.length > 0 && (
+        <div style={{ marginTop: 4, borderTop: '1px solid var(--bd)', paddingTop: 6 }}>
+          <div style={{ color: 'var(--tx2)', fontSize: 10, fontWeight: 600, marginBottom: 4, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+            Clause 54
+          </div>
+          {compErrors.map((w, i) => (
+            <div key={i} style={{ color: 'var(--red)', fontSize: 10, marginBottom: 2, lineHeight: 1.4 }}>
+              ✕ [{w.type}] {w.message}
+            </div>
+          ))}
+          {compWarnings.map((w, i) => (
+            <div key={i} style={{ color: 'var(--amber)', fontSize: 10, marginBottom: 2, lineHeight: 1.4 }}>
+              ▲ [{w.type}] {w.message}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

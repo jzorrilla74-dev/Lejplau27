@@ -1,4 +1,4 @@
-import { Lock, Unlock } from 'lucide-react';
+import { Lock, Unlock, Square } from 'lucide-react';
 import { useCanvas } from '../../context/CanvasContext';
 import { useLayout } from '../../context/LayoutContext';
 import { useLayers } from '../../context/LayerContext';
@@ -91,6 +91,19 @@ export default function Inspector() {
         {room.locked
           ? <><Lock size={12} strokeWidth={1.6} /> Locked</>
           : <><Unlock size={12} strokeWidth={1.6} /> Unlocked</>}
+      </button>
+
+      <button
+        onClick={() => update({ filled: room.filled === false })}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '5px 10px', fontSize: 11, marginBottom: 8,
+          background: room.filled !== false ? 'rgba(123,158,135,0.12)' : 'var(--bg-2)',
+          border: `1px solid ${room.filled !== false ? 'var(--accent)' : 'var(--bd-2)'}`,
+          borderRadius: 4, color: room.filled !== false ? 'var(--accent)' : 'var(--tx-2)', cursor: 'pointer',
+        }}>
+        <Square size={12} strokeWidth={1.6} />
+        {room.filled !== false ? 'Filled' : 'Outline'}
       </button>
 
       <label style={lbl}>Notes</label>

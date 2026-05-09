@@ -72,6 +72,8 @@ function reducer(state, action) {
       return { ...state, style: { ...state.style, ...action.patch } };
     case 'UPDATE_SITE_NOTES':
       return { ...state, siteNotes: action.value };
+    case 'REPLACE_STATE':
+      return action.state;
     default:
       return state;
   }

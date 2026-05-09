@@ -1,47 +1,41 @@
 @import "tailwindcss";
 
-/* ── Warm dark tokens ──────────────────────────────────────────────── */
+/* ── Tokens ────────────────────────────────────────────────────────── */
 :root {
   /* surfaces */
-  --bg:    #1a1612;
-  --bg-1:  #221d18;
-  --bg-2:  #2c2620;
-  /* legacy aliases kept so existing inline styles still work */
-  --bg2:   #221d18;
-  --bg3:   #2c2620;
+  --bg:    #1a1a18;
+  --bg-1:  #222220;
+  --bg-2:  #2a2a28;
+  /* legacy aliases */
+  --bg2:   #222220;
+  --bg3:   #2a2a28;
 
   /* text */
-  --tx:    #f1ead9;
-  --tx-2:  #b6ab93;
-  --tx-3:  #7c7160;
+  --tx:    #e8e6de;
+  --tx-2:  #9c9a92;
+  --tx-3:  #6e6d67;
   /* legacy aliases */
-  --tx2:   #b6ab93;
-  --tx3:   #7c7160;
+  --tx2:   #9c9a92;
+  --tx3:   #6e6d67;
 
   /* dividers */
-  --bd:    #332c24;
-  --bd-2:  #46392e;
+  --bd:    rgba(255,255,255,0.08);
+  --bd-2:  rgba(255,255,255,0.16);
   /* legacy aliases */
-  --bd2:   #46392e;
+  --bd2:   rgba(255,255,255,0.16);
 
   /* brand / status */
-  --accent:    #e0825a;
-  --accent-2:  #9bbf8a;
-  --green:     #9bbf8a;
-  --amber:     #e0a85a;
-  --red:       #e58a7a;
-
-  /* room categories (Konva fills + strokes — documented here for reference) */
-  --cat-living-fill:    #3a2f1a;  --cat-living-stroke:    #5a4a28;
-  --cat-cooking-fill:   #3f2c18;  --cat-cooking-stroke:   #6a4a26;
-  --cat-sleeping-fill:  #243121;  --cat-sleeping-stroke:  #3e5236;
-  --cat-wet-fill:       #1f2a30;  --cat-wet-stroke:       #34464f;
-  --cat-outdoor-fill:   #27321f;  --cat-outdoor-stroke:   #3e4f30;
+  --accent:    #7B9E87;
+  --accent-2:  #C4A882;
+  --highlight: #4A7B6B;
+  --green:     #7B9E87;
+  --amber:     #C4A882;
+  --red:       #C47B6B;
 
   /* radii */
-  --radius-sm: 4px;
-  --radius:    8px;
-  --radius-lg: 12px;
+  --radius-sm: 3px;
+  --radius:    6px;
+  --radius-lg: 10px;
   --hairline:  1px solid var(--bd);
 
   /* type stacks */
@@ -52,19 +46,21 @@
 
 /* ── Light override ────────────────────────────────────────────────── */
 .light {
-  --bg:    #f5f0e8;
-  --bg-1:  #ede8de;
-  --bg-2:  #e4ddd2;
-  --bg2:   #ede8de;
-  --bg3:   #e4ddd2;
-  --tx:    #1c1814;
-  --tx-2:  #5c5248;
-  --tx-3:  #9c9288;
-  --tx2:   #5c5248;
-  --tx3:   #9c9288;
-  --bd:    rgba(0,0,0,0.12);
-  --bd-2:  rgba(0,0,0,0.20);
-  --bd2:   rgba(0,0,0,0.20);
+  --bg:    #f5f3ee;
+  --bg-1:  #ece9e2;
+  --bg-2:  #e2dfd8;
+  --bg2:   #ece9e2;
+  --bg3:   #e2dfd8;
+  --tx:    #1a1a18;
+  --tx-2:  #5a5a54;
+  --tx-3:  #8a8a84;
+  --tx2:   #5a5a54;
+  --tx3:   #8a8a84;
+  --bd:    rgba(0,0,0,0.10);
+  --bd-2:  rgba(0,0,0,0.18);
+  --bd2:   rgba(0,0,0,0.18);
+  --accent:    #4A7B6B;
+  --highlight: #3A6B5B;
 }
 
 /* ── Reset ─────────────────────────────────────────────────────────── */
@@ -113,7 +109,7 @@ textarea { padding: 9px 12px; height: auto; min-height: 60px; }
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(224,130,90,.18);
+  box-shadow: 0 0 0 3px rgba(123,158,135,.20);
 }
 
 button { cursor: pointer; font-family: inherit; }
@@ -125,7 +121,7 @@ button { cursor: pointer; font-family: inherit; }
   text-transform: uppercase; border: 1px solid transparent; background: transparent;
   color: var(--tx-3);
 }
-.chip--essential.on { background: rgba(224,130,90,.16); color: var(--accent); }
+.chip--essential.on { background: rgba(123,158,135,.16); color: var(--accent); }
 .chip--desired.on   { background: var(--bg-2);          color: var(--tx-2); }
 .chip--optional.on  { border-color: var(--bd-2);        color: var(--tx-3); }
 

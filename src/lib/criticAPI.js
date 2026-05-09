@@ -1,27 +1,24 @@
-import { OPENROUTER_URL, OPENROUTER_MODEL } from './constants';
+import { OPENROUTER_URL, OPENROUTER_MODEL, BLOCK } from './constants';
 import { generateBriefSummary } from './briefSummary';
+import { checkMelbourneCompliance } from './melbourneRegs';
 
 const SYSTEM_PROMPT = `You are a residential architect specialising in compact urban houses in Melbourne, Australia.
 You are reviewing a schematic design for a single-storey house at 79 Woods Street Newport VIC 3015.
 
 Block: 9.4m wide × 33.5m deep. GRZ1 zone, no overlays. Street faces north (top of plan).
-Party wall on south boundary starting 9.37m from street, 8.25m long.
-Maximum footprint: 189m² (60% site coverage GRZ1).
+Party wall on south boundary. Maximum footprint: 189m² (60% site coverage GRZ1).
 
-The clients are a couple, no children, 1 dog, both work from home (2 studios required).
-They want a Japanese/Persian courtyard aesthetic — inward-looking, strong indoor-outdoor connection,
-quiet street face, central courtyard as the organising element.
-
-You have access to their full design brief and current schematic layout.
+You have access to the client's full design brief, ranked priorities, missing programme items, and current schematic layout.
 
 Your role:
 1. Give specific, actionable feedback referencing actual room names, dimensions, and positions
-2. Check ResCode Clause 54 requirements where relevant
-3. Evaluate against the brief priorities in their ranked order
+2. Check ResCode Clause 54 requirements and reference specific standard numbers (A5, A6, A10, A17, A20)
+3. Evaluate all feedback against the client's ranked design priorities in the order listed in the context
 4. Flag anything that won't work spatially or doesn't suit the brief
 5. Suggest specific alternatives — don't just identify problems
 6. Be direct and concise — the clients are technically literate (engineer + landscape architect)
 7. Never use generic advice — reference their specific block, brief, and layout
+8. If missingEssentials is non-empty, address unplaced programme items explicitly
 
 Format responses with these sections:
 ## What's working
@@ -36,8 +33,17 @@ function buildContext(brief, layout, layers, requestType, question) {
   const builtRooms = rooms.filter(r => r.category !== 'furniture');
   const total = builtRooms.filter(r => r.category !== 'outdoor').reduce((a, r) => a + r.w * r.d, 0);
 
+  const placedLabels = new Set(rooms.map(r => r.label.toLowerCase()));
+  const missingEssentials = brief.programme
+    .filter(p => p.checked && p.priority === 'essential' && !placedLabels.has(p.name.toLowerCase()))
+    .map(p => p.name);
+
+  const compliance = checkMelbourneCompliance(rooms, BLOCK).map(w => `[${w.type}] ${w.message}`);
+
   return {
     brief: { ...brief, summary: generateBriefSummary(brief) },
+    missingEssentials,
+    compliance,
     layout: {
       rooms: builtRooms.map(r => ({
         label: r.label,
