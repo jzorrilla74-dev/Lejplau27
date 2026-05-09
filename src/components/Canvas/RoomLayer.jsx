@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Layer, Group, Rect, Text, Circle } from 'react-konva';
+import { Layer, Group, Rect, Text, Circle, Line } from 'react-konva';
 import { CAT_STYLES } from '../../lib/roomDefaults';
 import { BLOCK, GRID_M, FINE_GRID_M } from '../../lib/constants';
 import { useCanvas } from '../../context/CanvasContext';
@@ -179,10 +179,34 @@ export default function RoomLayer({ stageRef }) {
     const strokeWidth = isSelected ? 2 : 1;
     const showLabel = pw > 20 && pd > 20;
 
+    const cx = px + pw / 2;
+    const cy = py + pd / 2;
+
+    function handleRotateStart(e) {
+      e.cancelBubble = true;
+      const stage = stageRef?.current;
+      if (!stage) return;
+      function onMove(ev) {
+        const ptr = stage.getPointerPosition();
+        const rawAngle = Math.atan2(ptr.y - cy, ptr.x - cx) * 180 / Math.PI + 90;
+        const angle = ((rawAngle % 360) + 360) % 360;
+        const snapped = ev.evt.shiftKey ? angle : Math.round(angle / 45) * 45;
+        lDispatch({ type: 'UPDATE_ROOM', uid: room.uid, patch: { rotation: snapped } });
+      }
+      function onUp() {
+        stage.off('pointermove', onMove);
+        stage.off('pointerup', onUp);
+      }
+      stage.on('pointermove', onMove);
+      stage.on('pointerup', onUp);
+    }
+
     return (
       <Group
         key={room.uid}
-        x={px} y={py}
+        x={cx} y={cy}
+        offsetX={pw / 2} offsetY={pd / 2}
+        rotation={room.rotation ?? 0}
         draggable={!room.locked && !layers.find(l => l.id === room.layerId)?.locked}
         onPointerDown={() => cDispatch({ type: 'SELECT_ROOM', uid: room.uid })}
         onDragStart={e => handleDragStart(e, room)}
@@ -261,6 +285,15 @@ export default function RoomLayer({ stageRef }) {
             <Text x={pw - 13} y={-13} text="✕" fontSize={10} fill="white" listening={false} />
             <Text x={pw/2 - 20} y={-14} width={40} text={`${room.w}m`} fontSize={9} fill="white" align="center" listening={false} />
             <Text x={pw + 2} y={pd/2 - 6} text={`${room.d}m`} fontSize={9} fill="white" listening={false} />
+
+            {/* rotation handle */}
+            <Line points={[pw/2, 0, pw/2, -20]} stroke="white" strokeWidth={1} listening={false} />
+            <Circle
+              x={pw/2} y={-26}
+              radius={6}
+              fill="white" stroke={catStyle.stroke} strokeWidth={1}
+              onPointerDown={handleRotateStart}
+            />
           </>
         )}
 
