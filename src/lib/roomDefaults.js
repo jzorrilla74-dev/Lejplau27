@@ -10,6 +10,7 @@ export const CAT_STYLES = {
   furniture:   { fill: '#282420', stroke: '#4a3e30' },
   structural:  { fill: '#3a3a3a', stroke: '#555555' },
   openings:    { fill: '#ffffff', stroke: '#2A9D8F' },
+  softscape:   { fill: '#C8E6C9', stroke: '#388E3C' },
 };
 
 const defs = [
@@ -117,6 +118,14 @@ const defs = [
   { defId: 'bbq',               label: 'BBQ',             w: 1.20, d: 0.60, category: 'furniture' },
   { defId: 'pot_large',         label: 'Pot Large',       w: 0.60, d: 0.60, category: 'furniture' },
   { defId: 'pot_small',         label: 'Pot Small',       w: 0.40, d: 0.40, category: 'furniture' },
+  // softscape
+  { defId: 'tree_deciduous',    label: 'Tree Deciduous',  w: 2.00, d: 2.00, category: 'softscape' },
+  { defId: 'tree_evergreen',    label: 'Tree Evergreen',  w: 1.50, d: 1.50, category: 'softscape' },
+  { defId: 'shrub_large',       label: 'Shrub Large',     w: 1.20, d: 1.20, category: 'softscape' },
+  { defId: 'shrub_small',       label: 'Shrub Small',     w: 0.60, d: 0.60, category: 'softscape' },
+  { defId: 'groundcover',       label: 'Grass/Groundcover',w: 2.00, d: 2.00, category: 'softscape' },
+  { defId: 'bamboo_screen',     label: 'Bamboo Screen',   w: 0.50, d: 2.00, category: 'softscape' },
+  { defId: 'courtyard_accent',  label: 'Courtyard Accent',w: 0.40, d: 0.40, category: 'softscape' },
   // openings
   { defId: 'door_std',          label: 'Door Standard',   w: 0.90, d: 0.10, category: 'openings' },
   { defId: 'door_sliding',      label: 'Door Sliding',    w: 1.80, d: 0.10, category: 'openings' },
@@ -145,4 +154,5 @@ export const ROOM_GROUPS = [
   { id: 'furniture',   label: 'Furniture',   defs: defs.filter(d => d.category === 'furniture') },
   { id: 'structural',  label: 'Structural',  defs: defs.filter(d => d.category === 'structural') },
   { id: 'openings',   label: 'Openings',    defs: defs.filter(d => d.category === 'openings') },
+  { id: 'softscape',  label: 'Softscape',   defs: defs.filter(d => d.category === 'softscape') },
 ];

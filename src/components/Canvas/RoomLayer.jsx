@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Layer, Group, Rect, Text } from 'react-konva';
+import { Layer, Group, Rect, Text, Circle } from 'react-konva';
 import { CAT_STYLES } from '../../lib/roomDefaults';
 import { BLOCK, GRID_M, FINE_GRID_M } from '../../lib/constants';
 import { useCanvas } from '../../context/CanvasContext';
@@ -157,6 +157,7 @@ export default function RoomLayer({ stageRef }) {
     const isStructural = room.category === 'structural';
     const isFurniture = room.category === 'furniture';
     const isOpening = room.category === 'openings';
+    const isSoftscape = room.category === 'softscape';
     const opacity = isStructural ? (layer?.opacity ?? 1) : (layer?.opacity ?? 1) * (isFurniture ? 0.7 : 0.93);
     const structuralFill = theme === 'dark' ? '#3a3a3a' : '#888888';
 
@@ -183,15 +184,26 @@ export default function RoomLayer({ stageRef }) {
         onDragMove={e => handleDragMove(e, room)}
         onDragEnd={e => handleDragEnd(e, room)}
       >
-        <Rect
-          width={pw} height={pd}
-          fill={isStructural ? structuralFill : catStyle.fill}
-          stroke={strokeColor}
-          strokeWidth={isStructural ? 1.5 : strokeWidth}
-          opacity={opacity}
-          cornerRadius={isStructural ? 0 : 2}
-          dash={isFurniture ? [4, 3] : isOpening ? [2, 2] : undefined}
-        />
+        {isSoftscape ? (
+          <Circle
+            x={pw / 2} y={pd / 2}
+            radius={Math.min(pw, pd) / 2}
+            fill={catStyle.fill}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            opacity={(layer?.opacity ?? 1) * 0.4}
+          />
+        ) : (
+          <Rect
+            width={pw} height={pd}
+            fill={isStructural ? structuralFill : catStyle.fill}
+            stroke={strokeColor}
+            strokeWidth={isStructural ? 1.5 : strokeWidth}
+            opacity={opacity}
+            cornerRadius={isStructural ? 0 : 2}
+            dash={isFurniture ? [4, 3] : isOpening ? [2, 2] : undefined}
+          />
+        )}
         {showLabel && (
           <>
             <Text
