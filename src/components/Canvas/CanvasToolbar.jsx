@@ -9,6 +9,7 @@ import { useLayers } from '../../context/LayerContext';
 import { useBrief } from '../../context/BriefContext';
 import { saveJSON } from '../../lib/exportJSON';
 import { exportSVG } from '../../lib/exportSVG';
+import { exportDXF } from '../../lib/exportDXF';
 import { parseImportedJSON } from '../../lib/importJSON';
 import { SCALE_MIN, SCALE_MAX } from '../../lib/constants';
 import LayerPanel from './LayerPanel';
@@ -133,6 +134,10 @@ export default function CanvasToolbar({ stageRef }) {
       </button>
       <button title="Export PNG" onClick={() => exportSVG(stageRef)} style={btn(false)}>
         <ImageDown size={ICON_SIZE} strokeWidth={ICON_SW} />
+      </button>
+      <button title="Export DXF" onClick={() => exportDXF(layout.rooms)}
+        style={{ ...btn(false), fontSize: 9, fontWeight: 600, color: 'var(--tx-3)', letterSpacing: '-.02em' }}>
+        DXF
       </button>
 
       {/* programme completeness */}
