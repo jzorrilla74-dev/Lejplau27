@@ -9,6 +9,7 @@ export const CAT_STYLES = {
   service:     { fill: '#3f2c18', stroke: '#6a4a26' },
   furniture:   { fill: '#282420', stroke: '#4a3e30' },
   structural:  { fill: '#3a3a3a', stroke: '#555555' },
+  openings:    { fill: '#ffffff', stroke: '#2A9D8F' },
 };
 
 const defs = [
@@ -116,6 +117,13 @@ const defs = [
   { defId: 'bbq',               label: 'BBQ',             w: 1.20, d: 0.60, category: 'furniture' },
   { defId: 'pot_large',         label: 'Pot Large',       w: 0.60, d: 0.60, category: 'furniture' },
   { defId: 'pot_small',         label: 'Pot Small',       w: 0.40, d: 0.40, category: 'furniture' },
+  // openings
+  { defId: 'door_std',          label: 'Door Standard',   w: 0.90, d: 0.10, category: 'openings' },
+  { defId: 'door_sliding',      label: 'Door Sliding',    w: 1.80, d: 0.10, category: 'openings' },
+  { defId: 'door_bifold',       label: 'Bifold/Stacker',  w: 2.40, d: 0.10, category: 'openings' },
+  { defId: 'window_std',        label: 'Window Standard', w: 1.20, d: 0.10, category: 'openings' },
+  { defId: 'window_highlight',  label: 'Window Highlight',w: 0.60, d: 0.10, category: 'openings' },
+  { defId: 'french_doors',      label: 'French Doors',    w: 1.50, d: 0.10, category: 'openings' },
   // structural
   { defId: 'wall',              label: 'Wall',            w: 0.20, d: 3.00, category: 'structural' },
   { defId: 'party_wall',        label: 'Party Wall',      w: 0.20, d: 8.25, category: 'structural' },
@@ -136,4 +144,5 @@ export const ROOM_GROUPS = [
   { id: 'service',     label: 'Service',     defs: defs.filter(d => d.category === 'service') },
   { id: 'furniture',   label: 'Furniture',   defs: defs.filter(d => d.category === 'furniture') },
   { id: 'structural',  label: 'Structural',  defs: defs.filter(d => d.category === 'structural') },
+  { id: 'openings',   label: 'Openings',    defs: defs.filter(d => d.category === 'openings') },
 ];
