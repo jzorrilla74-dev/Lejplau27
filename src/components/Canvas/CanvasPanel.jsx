@@ -7,6 +7,13 @@ import BlockLayer from './BlockLayer';
 import RoomLayer from './RoomLayer';
 import CanvasToolbar from './CanvasToolbar';
 
+const CTX_MENU_ITEMS = [
+  { label: 'Bring to Front', action: 'BRING_TO_FRONT' },
+  { label: 'Bring Forward',  action: 'BRING_FORWARD'  },
+  { label: 'Send Backward',  action: 'SEND_BACKWARD'  },
+  { label: 'Send to Back',   action: 'SEND_TO_BACK'   },
+];
+
 const RULER_PX = 20;
 const MARGIN = 8;
 
@@ -14,8 +21,16 @@ export default function CanvasPanel() {
   const containerRef = useRef(null);
   const stageRef = useRef(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
+  const [ctxMenu, setCtxMenu] = useState(null);
   const { scale, panX, panY, activeTool, dispatch } = useCanvas();
   const { dispatch: lDispatch } = useLayout();
+
+  useEffect(() => {
+    if (!ctxMenu) return;
+    function dismiss() { setCtxMenu(null); }
+    window.addEventListener('click', dismiss);
+    return () => window.removeEventListener('click', dismiss);
+  }, [ctxMenu]);
 
   // ResizeObserver
   useEffect(() => {
@@ -76,8 +91,35 @@ export default function CanvasPanel() {
           style={{ cursor: activeTool === 'pan' ? 'grab' : 'default' }}
         >
           <BlockLayer stageRef={stageRef} />
-          <RoomLayer stageRef={stageRef} />
+          <RoomLayer stageRef={stageRef} setCtxMenu={setCtxMenu} />
         </Stage>
+        {ctxMenu && (
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'fixed', left: ctxMenu.x, top: ctxMenu.y,
+              background: 'var(--bg-1)', border: '1px solid var(--bd-2)',
+              borderRadius: 6, zIndex: 1000, minWidth: 160,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden',
+            }}>
+            {CTX_MENU_ITEMS.map(item => (
+              <div
+                key={item.action}
+                onClick={() => {
+                  lDispatch({ type: item.action, uid: ctxMenu.uid });
+                  setCtxMenu(null);
+                }}
+                style={{
+                  padding: '7px 14px', fontSize: 11, color: 'var(--tx)',
+                  cursor: 'pointer', borderBottom: '1px solid var(--bd)',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                {item.label}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

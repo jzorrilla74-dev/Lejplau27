@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Layer, Group, Rect, Text, Circle, Line } from 'react-konva';
 import { CAT_STYLES } from '../../lib/roomDefaults';
 import { BLOCK, GRID_M, FINE_GRID_M } from '../../lib/constants';
@@ -33,7 +33,7 @@ function clamp(val, min, max) {
   return Math.max(min, Math.min(max, val));
 }
 
-export default function RoomLayer({ stageRef }) {
+export default function RoomLayer({ stageRef, setCtxMenu }) {
   const { scale, selectedUid, theme, dispatch: cDispatch } = useCanvas();
   const { rooms, dispatch: lDispatch } = useLayout();
   const { layers } = useLayers();
@@ -41,6 +41,17 @@ export default function RoomLayer({ stageRef }) {
 
   const BX = RULER_PX + MARGIN;
   const BY = RULER_PX + MARGIN;
+
+  useEffect(() => {
+    function onKey(e) {
+      if (!selectedUid) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key === ']') { e.preventDefault(); lDispatch({ type: 'BRING_FORWARD', uid: selectedUid }); }
+      if (mod && e.key === '[') { e.preventDefault(); lDispatch({ type: 'SEND_BACKWARD', uid: selectedUid }); }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedUid, lDispatch]);
 
   const warnings = checkConstraints(rooms, BLOCK);
   const warnUids = new Set(warnings.filter(w => w.uid).map(w => w.uid));
@@ -149,7 +160,9 @@ export default function RoomLayer({ stageRef }) {
   }
 
   const visibleLayerIds = new Set(layers.filter(l => l.visible).map(l => l.id));
-  const visibleRooms = rooms.filter(r => visibleLayerIds.has(r.layerId));
+  const visibleRooms = rooms
+    .filter(r => visibleLayerIds.has(r.layerId))
+    .sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
   const baseRooms = visibleRooms.filter(r => r.category !== 'openings');
   const openingRooms = visibleRooms.filter(r => r.category === 'openings');
 
@@ -212,6 +225,10 @@ export default function RoomLayer({ stageRef }) {
         onDragStart={e => handleDragStart(e, room)}
         onDragMove={e => handleDragMove(e, room)}
         onDragEnd={e => handleDragEnd(e, room)}
+        onContextMenu={e => {
+          e.evt.preventDefault();
+          setCtxMenu({ uid: room.uid, x: e.evt.clientX, y: e.evt.clientY });
+        }}
       >
         {isSoftscape ? (
           <Circle
