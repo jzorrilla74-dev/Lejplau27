@@ -78,15 +78,21 @@ export default function LayerPanel({ onClose }) {
           style={{ flex: 1, padding: '4px 0', fontSize: 10, background: 'var(--bg-2)', border: '1px solid var(--bd-2)', borderRadius: 4, color: 'var(--tx-2)', cursor: 'pointer' }}>
           + New layer
         </button>
-        <button
-          onClick={() => {
-            const active = layers.find(l => l.id === activeLayerId);
-            if (!active || active.locked) return;
-            dispatch({ type: 'REMOVE_LAYER', id: activeLayerId });
-          }}
-          style={{ padding: '4px 8px', background: 'rgba(229,138,122,0.12)', border: '1px solid rgba(229,138,122,0.25)', borderRadius: 4, color: 'var(--red)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <Trash2 size={12} strokeWidth={1.6} />
-        </button>
+        {activeLayerId === 'furniture' ? (
+          <div style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 3, color: 'var(--tx-3)', fontSize: 9 }}>
+            <Lock size={10} strokeWidth={1.6} /> top
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              const active = layers.find(l => l.id === activeLayerId);
+              if (!active || active.locked) return;
+              dispatch({ type: 'REMOVE_LAYER', id: activeLayerId });
+            }}
+            style={{ padding: '4px 8px', background: 'rgba(229,138,122,0.12)', border: '1px solid rgba(229,138,122,0.25)', borderRadius: 4, color: 'var(--red)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            <Trash2 size={12} strokeWidth={1.6} />
+          </button>
+        )}
       </div>
     </div>
   );

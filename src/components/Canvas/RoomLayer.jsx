@@ -163,7 +163,8 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
   const visibleRooms = rooms
     .filter(r => visibleLayerIds.has(r.layerId))
     .sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
-  const baseRooms = visibleRooms.filter(r => r.category !== 'openings');
+  const baseRooms = visibleRooms.filter(r => r.category !== 'openings' && r.category !== 'furniture');
+  const furnitureRooms = visibleRooms.filter(r => r.category === 'furniture');
   const openingRooms = visibleRooms.filter(r => r.category === 'openings');
 
   function renderRoom(room) {
@@ -324,6 +325,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
   return (
     <Layer>
       {baseRooms.map(renderRoom)}
+      {furnitureRooms.map(renderRoom)}
       {openingRooms.map(renderRoom)}
     </Layer>
   );
