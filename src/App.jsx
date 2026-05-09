@@ -32,6 +32,7 @@ function AppInner() {
   const { theme, selectedUid, dispatch: cDispatch } = useCanvas();
   const { dispatch: lDispatch, rooms } = useLayout();
   const [rightTab, setRightTab] = useState('rooms');
+  const [briefOpen, setBriefOpen] = useState(() => localStorage.getItem('brief_open') !== 'false');
 
   // Apply dark/light class to html
   useEffect(() => {
@@ -96,7 +97,7 @@ function AppInner() {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)', color: 'var(--tx)' }}>
       {/* LEFT: Brief */}
-      <BriefPanel />
+      <BriefPanel open={briefOpen} onToggle={() => setBriefOpen(o => { const n = !o; localStorage.setItem('brief_open', n); return n; })} />
 
       {/* CENTRE: Canvas */}
       <CanvasPanel />

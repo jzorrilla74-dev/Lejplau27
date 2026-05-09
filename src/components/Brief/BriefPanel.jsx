@@ -31,7 +31,7 @@ const fieldStyle = {
 };
 const labelStyle = { fontSize: 10, color: 'var(--tx2)', marginBottom: 2, display: 'block' };
 
-export default function BriefPanel() {
+export default function BriefPanel({ open = true, onToggle }) {
   const { state, dispatch } = useBrief();
   const [openSection, setOpenSection] = useState('household');
 
@@ -39,16 +39,39 @@ export default function BriefPanel() {
 
   const summary = generateBriefSummary(state);
 
+  if (!open) {
+    return (
+      <div
+        onClick={onToggle}
+        title="Expand Brief panel"
+        style={{
+          width: 40, height: '100%', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRight: '1px solid var(--bd)', background: 'var(--bg-1)',
+          cursor: 'pointer',
+        }}>
+        <span style={{
+          writingMode: 'vertical-rl', transform: 'rotate(180deg)',
+          fontSize: 10, fontWeight: 700, letterSpacing: '.14em',
+          textTransform: 'uppercase', color: 'var(--tx-3)',
+        }}>BRIEF</span>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ width: 280, height: '100%', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--bd)', overflow: 'hidden', background: 'var(--bg2)' }}>
+    <div style={{ width: 280, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--bd)', overflow: 'hidden', background: 'var(--bg2)' }}>
       {/* header */}
-      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--bd)', background: 'var(--bg3)' }}>
+      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--bd)', background: 'var(--bg3)', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+        <div style={{ flex: 1 }}>
         <div style={{ fontSize: 10, color: 'var(--tx3)', marginBottom: 2 }}>BRIEF</div>
         <input
           value={state.projectName}
           onChange={e => dispatch({ type: 'SET_PROJECT_NAME', value: e.target.value })}
           style={{ ...fieldStyle, marginBottom: 0, fontWeight: 600, fontSize: 12 }}
         />
+        </div>
+        <button onClick={onToggle} title="Collapse" style={{ background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', padding: 2, fontSize: 12, marginTop: 2 }}>‹</button>
       </div>
 
       <div style={{ overflowY: 'auto', flex: 1 }}>
