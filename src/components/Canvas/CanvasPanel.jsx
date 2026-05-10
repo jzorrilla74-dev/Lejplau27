@@ -110,9 +110,9 @@ export default function CanvasPanel() {
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <CanvasToolbar stageRef={stageRef} fitBlock={fitBlock} />
-      <div ref={containerRef} style={{ flex: 1, overflow: 'auto', background: 'var(--bg)' }}>
+      <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflow: 'auto', background: 'var(--bg)', position: 'relative' }}>
         <Stage
           ref={stageRef}
           width={stageW}

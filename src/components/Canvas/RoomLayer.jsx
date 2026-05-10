@@ -35,7 +35,7 @@ function clamp(val, min, max) {
 
 export default function RoomLayer({ stageRef, setCtxMenu }) {
   const { scale, selectedUid, theme, dispatch: cDispatch } = useCanvas();
-  const { rooms, dispatch: lDispatch } = useLayout();
+  const { rooms, partyWallStartM, dispatch: lDispatch } = useLayout();
   const { layers, activeLayerId } = useLayers();
   const [snapGuides, setSnapGuides] = useState({ x: [], y: [] });
 
@@ -68,30 +68,51 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
     const pw = room.w * scale;
     const pd = room.d * scale;
 
-    // node.x/y is the group CENTER (due to offsetX/offsetY). Subtract half-size to get top-left.
-    let xm = snapTo((node.x() - pw / 2 - BX) / scale, grid);
-    let ym = snapTo((node.y() - pd / 2 - BY) / scale, grid);
+    // node.x/y is the group CENTER (offsetX/offsetY). Subtract half-size to get top-left.
+    const origXm = snapTo((node.x() - pw / 2 - BX) / scale, grid);
+    const origYm = snapTo((node.y() - pd / 2 - BY) / scale, grid);
+    let xm = origXm;
+    let ym = origYm;
 
-    // snap-to-object edges for all rooms
+    // Build all snap-target X edges: room edges + block boundaries + setbacks
+    const snapXEdges = [
+      BLOCK.setbacks.north,           // 1.0m north side setback
+      BLOCK.widthM,                   // 9.4m south boundary
+      BLOCK.widthM - BLOCK.setbacks.south, // south setback line if defined
+    ];
+    // Build all snap-target Y edges: room edges + front/rear setbacks + party wall
+    const snapYEdges = [
+      BLOCK.setbacks.front,           // 3.5m street setback
+      BLOCK.depthM - BLOCK.setbacks.rear, // rear setback
+      BLOCK.depthM,                   // rear boundary
+      partyWallStartM,                // party wall start (~9.37m)
+      partyWallStartM + BLOCK.partyWall.lengthM, // party wall end (~17.62m)
+    ];
+    for (const other of rooms) {
+      if (other.uid === room.uid) continue;
+      snapXEdges.push(other.x, other.x + other.w);
+      snapYEdges.push(other.y, other.y + other.d);
+    }
+
     const guideX = [];
     const guideY = [];
     let bestDx = SNAP_OBJ_DIST + 1;
     let bestDy = SNAP_OBJ_DIST + 1;
-    for (const other of rooms) {
-      if (other.uid === room.uid) continue;
-      for (const ex of [other.x, other.x + other.w]) {
-        const dLeft  = Math.abs(xm - ex);
-        const dRight = Math.abs(xm + room.w - ex);
-        if (dLeft < bestDx)  { bestDx = dLeft;  xm = ex; }
-        if (dRight < bestDx) { bestDx = dRight; xm = ex - room.w; }
-      }
-      for (const ey of [other.y, other.y + other.d]) {
-        const dTop    = Math.abs(ym - ey);
-        const dBottom = Math.abs(ym + room.d - ey);
-        if (dTop < bestDy)    { bestDy = dTop;    ym = ey; }
-        if (dBottom < bestDy) { bestDy = dBottom; ym = ey - room.d; }
-      }
+
+    // Compare against the ORIGINAL dragged position (origXm/origYm) — not the accumulating xm
+    for (const ex of snapXEdges) {
+      const dLeft  = Math.abs(origXm - ex);
+      const dRight = Math.abs(origXm + room.w - ex);
+      if (dLeft < bestDx)  { bestDx = dLeft;  xm = ex; }
+      if (dRight < bestDx) { bestDx = dRight; xm = ex - room.w; }
     }
+    for (const ey of snapYEdges) {
+      const dTop    = Math.abs(origYm - ey);
+      const dBottom = Math.abs(origYm + room.d - ey);
+      if (dTop < bestDy)    { bestDy = dTop;    ym = ey; }
+      if (dBottom < bestDy) { bestDy = dBottom; ym = ey - room.d; }
+    }
+
     if (bestDx <= SNAP_OBJ_DIST) guideX.push(BX + xm * scale);
     if (bestDy <= SNAP_OBJ_DIST) guideY.push(BY + ym * scale);
     setSnapGuides({ x: guideX, y: guideY });
@@ -99,7 +120,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
     const cx = clamp(xm, ENV.x1, ENV.x2 - room.w);
     const cy = clamp(ym, ENV.y1, ENV.y2 - room.d);
 
-    // Set the CENTER position back (add half-size back)
+    // Set the CENTER position back (add half-size to convert top-left → center)
     node.x(BX + cx * scale + pw / 2);
     node.y(BY + cy * scale + pd / 2);
   }
@@ -288,7 +309,10 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
               x={4} y={pd / 2 - 14}
               width={pw - 8} text={room.label}
               fontSize={Math.min(13, pw / 5)}
-              fill="#e8e6de" align="center" listening={false}
+              fill={theme === 'dark' ? '#e8e6de' : '#1a1a18'}
+              align="center" listening={false}
+              shadowColor={theme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)'}
+              shadowOffsetX={0} shadowOffsetY={0} shadowBlur={4}
             />
             <Text
               x={4} y={pd / 2 + 2}
@@ -296,7 +320,10 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
               text={`${room.w}×${room.d}m`}
               fontSize={Math.min(11, pw / 7)}
               fontFamily="'JetBrains Mono', monospace"
-              fill="#9c9a92" align="center" listening={false}
+              fill={theme === 'dark' ? '#9c9a92' : '#5a5a54'}
+              align="center" listening={false}
+              shadowColor={theme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)'}
+              shadowOffsetX={0} shadowOffsetY={0} shadowBlur={3}
             />
           </>
         )}
