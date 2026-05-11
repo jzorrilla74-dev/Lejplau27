@@ -7,6 +7,7 @@ const INITIAL = {
   panY: 0,
   activeTool: 'select',
   gridVisible: true,
+  snapEnabled: true,
   theme: 'dark',
   selectedUid: null,
   fitRequested: 0,
@@ -20,6 +21,7 @@ function reducer(state, action) {
     case 'REQUEST_FIT':  return { ...state, fitRequested: state.fitRequested + 1 };
     case 'SET_TOOL':     return { ...state, activeTool: action.tool };
     case 'TOGGLE_GRID':  return { ...state, gridVisible: !state.gridVisible };
+    case 'TOGGLE_SNAP':  return { ...state, snapEnabled: !state.snapEnabled };
     case 'TOGGLE_THEME': return { ...state, theme: state.theme === 'dark' ? 'light' : 'dark' };
     case 'SELECT_ROOM':  return { ...state, selectedUid: action.uid };
     case 'DESELECT':     return { ...state, selectedUid: null };

@@ -34,7 +34,7 @@ function clamp(val, min, max) {
 }
 
 export default function RoomLayer({ stageRef, setCtxMenu }) {
-  const { scale, selectedUid, theme, dispatch: cDispatch } = useCanvas();
+  const { scale, selectedUid, theme, snapEnabled, dispatch: cDispatch } = useCanvas();
   const { rooms, partyWallStartM, dispatch: lDispatch } = useLayout();
   const { layers, activeLayerId } = useLayers();
   const [snapGuides, setSnapGuides] = useState({ x: [], y: [] });
@@ -76,49 +76,50 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
     let xm = snapTo(rawXm, grid);
     let ym = snapTo(rawYm, grid);
 
-    // Build snap-target X edges: block boundaries + room edges
-    const snapXEdges = [
-      BLOCK.setbacks.north,
-      BLOCK.widthM,
-    ];
-    // Build snap-target Y edges: setbacks + party wall + room edges
-    const snapYEdges = [
-      BLOCK.setbacks.front,
-      BLOCK.depthM - BLOCK.setbacks.rear,
-      BLOCK.depthM,
-      partyWallStartM,
-      partyWallStartM + BLOCK.partyWall.lengthM,
-    ];
-    for (const other of rooms) {
-      if (other.uid === room.uid) continue;
-      snapXEdges.push(other.x, other.x + other.w);
-      snapYEdges.push(other.y, other.y + other.d);
-    }
+    if (snapEnabled) {
+      // Build snap-target X edges: block boundaries + room edges
+      const snapXEdges = [
+        BLOCK.setbacks.north,
+        BLOCK.widthM,
+      ];
+      // Build snap-target Y edges: setbacks + party wall + room edges
+      const snapYEdges = [
+        BLOCK.setbacks.front,
+        BLOCK.depthM - BLOCK.setbacks.rear,
+        BLOCK.depthM,
+        partyWallStartM,
+        partyWallStartM + BLOCK.partyWall.lengthM,
+      ];
+      for (const other of rooms) {
+        if (other.uid === room.uid) continue;
+        snapXEdges.push(other.x, other.x + other.w);
+        snapYEdges.push(other.y, other.y + other.d);
+      }
 
-    let bestDx = SNAP_OBJ_DIST + 1;
-    let bestDy = SNAP_OBJ_DIST + 1;
-    let snapEdgeX = null; // the actual edge we snapped to (for guide placement)
-    let snapEdgeY = null;
+      let bestDx = SNAP_OBJ_DIST + 1;
+      let bestDy = SNAP_OBJ_DIST + 1;
+      let snapEdgeX = null;
+      let snapEdgeY = null;
 
-    // Always compare against RAW position so grid pre-quantisation doesn't
-    // push us outside the snap threshold for nearby object edges.
-    for (const ex of snapXEdges) {
-      const dLeft  = Math.abs(rawXm - ex);
-      const dRight = Math.abs(rawXm + room.w - ex);
-      if (dLeft < bestDx)  { bestDx = dLeft;  xm = ex;          snapEdgeX = ex; }
-      if (dRight < bestDx) { bestDx = dRight; xm = ex - room.w; snapEdgeX = ex; }
-    }
-    for (const ey of snapYEdges) {
-      const dTop    = Math.abs(rawYm - ey);
-      const dBottom = Math.abs(rawYm + room.d - ey);
-      if (dTop < bestDy)    { bestDy = dTop;    ym = ey;          snapEdgeY = ey; }
-      if (dBottom < bestDy) { bestDy = dBottom; ym = ey - room.d; snapEdgeY = ey; }
-    }
+      for (const ex of snapXEdges) {
+        const dLeft  = Math.abs(rawXm - ex);
+        const dRight = Math.abs(rawXm + room.w - ex);
+        if (dLeft < bestDx)  { bestDx = dLeft;  xm = ex;          snapEdgeX = ex; }
+        if (dRight < bestDx) { bestDx = dRight; xm = ex - room.w; snapEdgeX = ex; }
+      }
+      for (const ey of snapYEdges) {
+        const dTop    = Math.abs(rawYm - ey);
+        const dBottom = Math.abs(rawYm + room.d - ey);
+        if (dTop < bestDy)    { bestDy = dTop;    ym = ey;          snapEdgeY = ey; }
+        if (dBottom < bestDy) { bestDy = dBottom; ym = ey - room.d; snapEdgeY = ey; }
+      }
 
-    // Guide lines appear at the actual snap edge, not the room left/top edge
-    const guideX = snapEdgeX !== null ? [BX + snapEdgeX * scale] : [];
-    const guideY = snapEdgeY !== null ? [BY + snapEdgeY * scale] : [];
-    setSnapGuides({ x: guideX, y: guideY });
+      const guideX = snapEdgeX !== null ? [BX + snapEdgeX * scale] : [];
+      const guideY = snapEdgeY !== null ? [BY + snapEdgeY * scale] : [];
+      setSnapGuides({ x: guideX, y: guideY });
+    } else {
+      setSnapGuides({ x: [], y: [] });
+    }
 
     const cx = clamp(xm, ENV.x1, ENV.x2 - room.w);
     const cy = clamp(ym, ENV.y1, ENV.y2 - room.d);

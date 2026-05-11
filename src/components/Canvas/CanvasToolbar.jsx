@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   MousePointer2, Hand, Undo2, Redo2, Minus, Plus,
   Grid3x3, Sun, Moon, Layers, Save, Upload, ImageDown,
-  Home, Square,
+  Home, Square, Magnet,
 } from 'lucide-react';
 import { useCanvas } from '../../context/CanvasContext';
 import { useLayout } from '../../context/LayoutContext';
@@ -26,7 +26,7 @@ function formatAgo(d) {
 }
 
 export default function CanvasToolbar({ stageRef, fitBlock }) {
-  const { scale, activeTool, gridVisible, theme, dispatch } = useCanvas();
+  const { scale, activeTool, gridVisible, snapEnabled, theme, dispatch } = useCanvas();
   const { status: saveStatus, lastSaved } = useFirestoreStatus();
   const { rooms, dispatch: lDispatch, undo, redo, canUndo, canRedo } = useLayout();
   const { layers } = useLayers();
@@ -134,6 +134,9 @@ export default function CanvasToolbar({ stageRef, fitBlock }) {
 
       <button title="Toggle grid" onClick={() => dispatch({ type: 'TOGGLE_GRID' })} style={btn(gridVisible)}>
         <Grid3x3 size={ICON_SIZE} strokeWidth={ICON_SW} />
+      </button>
+      <button title="Toggle snap (S)" onClick={() => dispatch({ type: 'TOGGLE_SNAP' })} style={btn(snapEnabled)}>
+        <Magnet size={ICON_SIZE} strokeWidth={ICON_SW} />
       </button>
       <button title="Toggle theme" onClick={() => dispatch({ type: 'TOGGLE_THEME' })} style={btn(false)}>
         {theme === 'dark'
