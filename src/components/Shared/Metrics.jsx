@@ -11,8 +11,18 @@ export default function Metrics() {
   const compliance = checkMelbourneCompliance(rooms, BLOCK);
 
   const builtRooms = rooms.filter(r => r.category !== 'outdoor' && r.category !== 'furniture');
-  const totalM2 = builtRooms.reduce((a, r) => a + r.w * r.d, 0);
-  const coveragePct = (totalM2 / BLOCK.maxFootprintM2) * 100;
+
+  // Footprint = bounding box of all built rooms, not the sum of individual areas.
+  // Room coordinates (x, y, w, d) are already in metres.
+  let footprintM2 = 0;
+  if (builtRooms.length > 0) {
+    const minX = Math.min(...builtRooms.map(r => r.x));
+    const maxX = Math.max(...builtRooms.map(r => r.x + r.w));
+    const minY = Math.min(...builtRooms.map(r => r.y));
+    const maxY = Math.max(...builtRooms.map(r => r.y + r.d));
+    footprintM2 = (maxX - minX) * (maxY - minY);
+  }
+  const coveragePct = (footprintM2 / BLOCK.maxFootprintM2) * 100;
   const overLimit = coveragePct > 100;
 
   const byCategory = {};
@@ -35,7 +45,7 @@ export default function Metrics() {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
         <span style={{ color: 'var(--tx2)' }}>Footprint</span>
         <span style={{ color: overLimit ? 'var(--red)' : 'var(--tx)', fontWeight: 600 }}>
-          {totalM2.toFixed(0)} / {BLOCK.maxFootprintM2} m²
+          {footprintM2.toFixed(1)} / {BLOCK.maxFootprintM2} m²
         </span>
       </div>
       <div style={{ height: 6, background: 'var(--bg3)', borderRadius: 3, marginBottom: 6, overflow: 'hidden' }}>
