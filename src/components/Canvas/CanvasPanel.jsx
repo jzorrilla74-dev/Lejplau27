@@ -23,6 +23,8 @@ export default function CanvasPanel() {
   const containerRef = useRef(null);
   const stageRef = useRef(null);
   const hasFitRef = useRef(false);
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef({ clientX: 0, clientY: 0, panX: 0, panY: 0 });
   const [size, setSize] = useState({ w: 800, h: 600 });
   const [ctxMenu, setCtxMenu] = useState(null);
   const { scale, panX, panY, activeTool, fitRequested, dispatch } = useCanvas();
@@ -43,7 +45,6 @@ export default function CanvasPanel() {
     dispatch({ type: 'FIT_BLOCK', scale: fs, panX: 0, panY: 0 });
   }, [size, dispatch]);
 
-  // Watch REQUEST_FIT from context (triggered by Cmd+0)
   useEffect(() => {
     if (fitRequested > 0) fitBlock();
   }, [fitRequested]); // eslint-disable-line
@@ -58,7 +59,6 @@ export default function CanvasPanel() {
         const w = e.contentRect.width;
         const h = e.contentRect.height;
         setSize({ w, h });
-
         if (!hasFitRef.current) {
           hasFitRef.current = true;
           const fs = Math.min(
@@ -78,23 +78,35 @@ export default function CanvasPanel() {
   const stageW = BX + BW + RULER_PX + 60;
   const stageH = BY + BD + RULER_PX + 40;
 
-  function handleStageDragEnd(e) {
+  // Manual pan via pointer events — avoids Konva draggable which physically
+  // moves the canvas DOM element outside the overflow container's clipping rect.
+  function handleStagePointerDown(e) {
     if (activeTool !== 'pan') return;
+    isPanningRef.current = true;
+    panStartRef.current = { clientX: e.evt.clientX, clientY: e.evt.clientY, panX, panY };
+  }
+
+  function handleStagePointerMove(e) {
+    if (!isPanningRef.current) return;
+    const dx = e.evt.clientX - panStartRef.current.clientX;
+    const dy = e.evt.clientY - panStartRef.current.clientY;
+    const nx = panStartRef.current.panX + dx;
+    const ny = panStartRef.current.panY + dy;
+    // Clamp: keep at least 100px of block visible
     const minX = -(BX + BW - 100);
     const minY = -(BY + BD - 100);
     const maxX = size.w - 100;
     const maxY = size.h - 100;
-    const cx = Math.max(minX, Math.min(maxX, e.target.x()));
-    const cy = Math.max(minY, Math.min(maxY, e.target.y()));
-    e.target.x(cx);
-    e.target.y(cy);
-    dispatch({ type: 'SET_PAN', panX: cx, panY: cy });
+    dispatch({ type: 'SET_PAN', panX: Math.max(minX, Math.min(maxX, nx)), panY: Math.max(minY, Math.min(maxY, ny)) });
+  }
+
+  function handleStagePointerUp() {
+    isPanningRef.current = false;
   }
 
   function handleStageClick(e) {
-    if (e.target === e.target.getStage()) {
-      dispatch({ type: 'DESELECT' });
-    }
+    if (activeTool === 'pan') return;
+    if (e.target === e.target.getStage()) dispatch({ type: 'DESELECT' });
   }
 
   function handleStageDblClick(e) {
@@ -119,8 +131,9 @@ export default function CanvasPanel() {
           height={stageH}
           x={panX}
           y={panY}
-          draggable={activeTool === 'pan'}
-          onDragEnd={handleStageDragEnd}
+          onPointerDown={handleStagePointerDown}
+          onPointerMove={handleStagePointerMove}
+          onPointerUp={handleStagePointerUp}
           onClick={handleStageClick}
           onDblClick={handleStageDblClick}
           onWheel={handleWheel}

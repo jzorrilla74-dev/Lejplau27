@@ -68,25 +68,26 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
     const pw = room.w * scale;
     const pd = room.d * scale;
 
-    // node.x/y is the group CENTER (offsetX/offsetY). Subtract half-size to get top-left.
-    const origXm = snapTo((node.x() - pw / 2 - BX) / scale, grid);
-    const origYm = snapTo((node.y() - pd / 2 - BY) / scale, grid);
-    let xm = origXm;
-    let ym = origYm;
+    // Raw meter position (pixel-exact, no grid quantisation yet)
+    const rawXm = (node.x() - pw / 2 - BX) / scale;
+    const rawYm = (node.y() - pd / 2 - BY) / scale;
 
-    // Build all snap-target X edges: room edges + block boundaries + setbacks
+    // Default to grid snap; object/boundary snap overrides below
+    let xm = snapTo(rawXm, grid);
+    let ym = snapTo(rawYm, grid);
+
+    // Build snap-target X edges: block boundaries + room edges
     const snapXEdges = [
-      BLOCK.setbacks.north,           // 1.0m north side setback
-      BLOCK.widthM,                   // 9.4m south boundary
-      BLOCK.widthM - BLOCK.setbacks.south, // south setback line if defined
+      BLOCK.setbacks.north,
+      BLOCK.widthM,
     ];
-    // Build all snap-target Y edges: room edges + front/rear setbacks + party wall
+    // Build snap-target Y edges: setbacks + party wall + room edges
     const snapYEdges = [
-      BLOCK.setbacks.front,           // 3.5m street setback
-      BLOCK.depthM - BLOCK.setbacks.rear, // rear setback
-      BLOCK.depthM,                   // rear boundary
-      partyWallStartM,                // party wall start (~9.37m)
-      partyWallStartM + BLOCK.partyWall.lengthM, // party wall end (~17.62m)
+      BLOCK.setbacks.front,
+      BLOCK.depthM - BLOCK.setbacks.rear,
+      BLOCK.depthM,
+      partyWallStartM,
+      partyWallStartM + BLOCK.partyWall.lengthM,
     ];
     for (const other of rooms) {
       if (other.uid === room.uid) continue;
@@ -94,33 +95,35 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
       snapYEdges.push(other.y, other.y + other.d);
     }
 
-    const guideX = [];
-    const guideY = [];
     let bestDx = SNAP_OBJ_DIST + 1;
     let bestDy = SNAP_OBJ_DIST + 1;
+    let snapEdgeX = null; // the actual edge we snapped to (for guide placement)
+    let snapEdgeY = null;
 
-    // Compare against the ORIGINAL dragged position (origXm/origYm) — not the accumulating xm
+    // Always compare against RAW position so grid pre-quantisation doesn't
+    // push us outside the snap threshold for nearby object edges.
     for (const ex of snapXEdges) {
-      const dLeft  = Math.abs(origXm - ex);
-      const dRight = Math.abs(origXm + room.w - ex);
-      if (dLeft < bestDx)  { bestDx = dLeft;  xm = ex; }
-      if (dRight < bestDx) { bestDx = dRight; xm = ex - room.w; }
+      const dLeft  = Math.abs(rawXm - ex);
+      const dRight = Math.abs(rawXm + room.w - ex);
+      if (dLeft < bestDx)  { bestDx = dLeft;  xm = ex;          snapEdgeX = ex; }
+      if (dRight < bestDx) { bestDx = dRight; xm = ex - room.w; snapEdgeX = ex; }
     }
     for (const ey of snapYEdges) {
-      const dTop    = Math.abs(origYm - ey);
-      const dBottom = Math.abs(origYm + room.d - ey);
-      if (dTop < bestDy)    { bestDy = dTop;    ym = ey; }
-      if (dBottom < bestDy) { bestDy = dBottom; ym = ey - room.d; }
+      const dTop    = Math.abs(rawYm - ey);
+      const dBottom = Math.abs(rawYm + room.d - ey);
+      if (dTop < bestDy)    { bestDy = dTop;    ym = ey;          snapEdgeY = ey; }
+      if (dBottom < bestDy) { bestDy = dBottom; ym = ey - room.d; snapEdgeY = ey; }
     }
 
-    if (bestDx <= SNAP_OBJ_DIST) guideX.push(BX + xm * scale);
-    if (bestDy <= SNAP_OBJ_DIST) guideY.push(BY + ym * scale);
+    // Guide lines appear at the actual snap edge, not the room left/top edge
+    const guideX = snapEdgeX !== null ? [BX + snapEdgeX * scale] : [];
+    const guideY = snapEdgeY !== null ? [BY + snapEdgeY * scale] : [];
     setSnapGuides({ x: guideX, y: guideY });
 
     const cx = clamp(xm, ENV.x1, ENV.x2 - room.w);
     const cy = clamp(ym, ENV.y1, ENV.y2 - room.d);
 
-    // Set the CENTER position back (add half-size to convert top-left → center)
+    // node.x/y is GROUP CENTER (offsetX/offsetY) — add half-size back
     node.x(BX + cx * scale + pw / 2);
     node.y(BY + cy * scale + pd / 2);
   }

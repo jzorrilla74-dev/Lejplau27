@@ -94,19 +94,19 @@ export default function Palette() {
                         style={{
                           padding: '4px 3px',
                           background: catStyle.fill,
-                          border: `1px solid ${isRequired ? catStyle.stroke : 'rgba(0,0,0,0.1)'}`,
+                          border: `1px solid ${catStyle.stroke}`,
                           borderRadius: 3,
                           cursor: 'pointer',
                           fontSize: 9,
-                          color: '#1a1a18',
+                          color: '#ffffff',
                           textAlign: 'center',
                           lineHeight: 1.3,
                           outline: isRequired ? `2px solid ${catStyle.stroke}` : 'none',
                           outlineOffset: -2,
                         }}
                       >
-                        <div style={{ fontWeight: isRequired ? 700 : 400 }}>{def.label}</div>
-                        <div style={{ color: '#888', fontSize: 8 }}>{def.w}×{def.d}</div>
+                        <div style={{ fontWeight: isRequired ? 700 : 500 }}>{def.label}</div>
+                        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 8 }}>{def.w}×{def.d}</div>
                       </button>
                     );
                   })}
