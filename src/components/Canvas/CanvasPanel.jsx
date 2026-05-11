@@ -25,6 +25,7 @@ export default function CanvasPanel() {
   const hasFitRef = useRef(false);
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ clientX: 0, clientY: 0, panX: 0, panY: 0 });
+  // Start with a reasonable default; ResizeObserver corrects it on first paint.
   const [size, setSize] = useState({ w: 800, h: 600 });
   const [ctxMenu, setCtxMenu] = useState(null);
   const { scale, panX, panY, activeTool, fitRequested, dispatch } = useCanvas();
@@ -37,7 +38,7 @@ export default function CanvasPanel() {
     return () => window.removeEventListener('click', dismiss);
   }, [ctxMenu]);
 
-  // Reset View: fit BOTH dimensions so the whole block is visible at once.
+  // Reset View (Cmd+0): fit BOTH dimensions — whole block visible at once.
   const fitBlock = useCallback(() => {
     const fs = Math.min(
       Math.max(SCALE_MIN, Math.min(SCALE_MAX, (size.w - 2 * BX - 60) / BLOCK.widthM)),
@@ -46,8 +47,7 @@ export default function CanvasPanel() {
     dispatch({ type: 'FIT_BLOCK', scale: fs, panX: 0, panY: 0 });
   }, [size, dispatch]);
 
-  // Fit to width: fills the canvas horizontally for maximum room size;
-  // the block scrolls vertically. Used on initial load.
+  // Initial load: fit to WIDTH so rooms are as large as possible; pan vertically.
   const fitWidth = useCallback((w) => {
     const fs = Math.max(SCALE_MIN, Math.min(SCALE_MAX, (w - 2 * BX - 60) / BLOCK.widthM));
     dispatch({ type: 'FIT_BLOCK', scale: fs, panX: 0, panY: 0 });
@@ -57,15 +57,13 @@ export default function CanvasPanel() {
     if (fitRequested > 0) fitBlock();
   }, [fitRequested]); // eslint-disable-line
 
-  // ResizeObserver + fit on first measurement
+  // Track the container's live pixel size. First measurement triggers fit-to-width.
   useEffect(() => {
     let timer;
     const ro = new ResizeObserver(entries => {
       clearTimeout(timer);
       timer = setTimeout(() => {
-        const e = entries[0];
-        const w = e.contentRect.width;
-        const h = e.contentRect.height;
+        const { width: w, height: h } = entries[0].contentRect;
         setSize({ w, h });
         if (!hasFitRef.current) {
           hasFitRef.current = true;
@@ -75,15 +73,25 @@ export default function CanvasPanel() {
     });
     if (containerRef.current) ro.observe(containerRef.current);
     return () => { ro.disconnect(); clearTimeout(timer); };
-  }, [dispatch]);
+  }, [dispatch]); // eslint-disable-line
 
   const BW = BLOCK.widthM * scale;
   const BD = BLOCK.depthM * scale;
-  const stageW = BX + BW + RULER_PX + 60;
-  const stageH = BY + BD + RULER_PX + 40;
 
-  // Manual pan via pointer events — avoids Konva draggable which physically
-  // moves the canvas DOM element outside the overflow container's clipping rect.
+  // KEY FIX: Stage is exactly the container size — the canvas DOM element never
+  // overflows its column, so it cannot steal pointer events from the right panel.
+  // All panning is handled by Stage x/y (internal Konva drawing offset).
+  const stageW = Math.max(size.w, 100);
+  const stageH = Math.max(size.h, 100);
+
+  // Pan constraints: keep at least 100px of block visible in each direction.
+  function clampPan(nx, ny) {
+    return {
+      x: Math.max(-(BX + BW - 100), Math.min(size.w - 100, nx)),
+      y: Math.max(-(BY + BD - 100), Math.min(size.h - 100, ny)),
+    };
+  }
+
   function handleStagePointerDown(e) {
     if (activeTool !== 'pan') return;
     isPanningRef.current = true;
@@ -94,14 +102,8 @@ export default function CanvasPanel() {
     if (!isPanningRef.current) return;
     const dx = e.evt.clientX - panStartRef.current.clientX;
     const dy = e.evt.clientY - panStartRef.current.clientY;
-    const nx = panStartRef.current.panX + dx;
-    const ny = panStartRef.current.panY + dy;
-    // Clamp: keep at least 100px of block visible
-    const minX = -(BX + BW - 100);
-    const minY = -(BY + BD - 100);
-    const maxX = size.w - 100;
-    const maxY = size.h - 100;
-    dispatch({ type: 'SET_PAN', panX: Math.max(minX, Math.min(maxX, nx)), panY: Math.max(minY, Math.min(maxY, ny)) });
+    const { x, y } = clampPan(panStartRef.current.panX + dx, panStartRef.current.panY + dy);
+    dispatch({ type: 'SET_PAN', panX: x, panY: y });
   }
 
   function handleStagePointerUp() {
@@ -126,9 +128,22 @@ export default function CanvasPanel() {
   }
 
   return (
-    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    // position:relative + isolation:isolate creates a stacking context so the
+    // canvas never bleeds into adjacent panel columns via z-index stacking.
+    <div style={{
+      flex: 1, minWidth: 0,
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',
+      position: 'relative', isolation: 'isolate',
+    }}>
       <CanvasToolbar stageRef={stageRef} fitBlock={fitBlock} />
-      <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflow: 'auto', background: 'var(--bg)', position: 'relative' }}>
+      {/* overflow:hidden — no scrollbars needed; all pan via Stage x/y */}
+      <div ref={containerRef} style={{
+        flex: 1, minHeight: 0,
+        overflow: 'hidden',
+        background: 'var(--bg)',
+        position: 'relative',
+      }}>
         <Stage
           ref={stageRef}
           width={stageW}
@@ -141,11 +156,12 @@ export default function CanvasPanel() {
           onClick={handleStageClick}
           onDblClick={handleStageDblClick}
           onWheel={handleWheel}
-          style={{ cursor: activeTool === 'pan' ? 'grab' : 'default' }}
+          style={{ cursor: activeTool === 'pan' ? 'grab' : 'default', display: 'block' }}
         >
           <BlockLayer stageRef={stageRef} />
           <RoomLayer stageRef={stageRef} setCtxMenu={setCtxMenu} />
         </Stage>
+
         {ctxMenu && (
           <div
             onClick={e => e.stopPropagation()}

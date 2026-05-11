@@ -144,7 +144,7 @@ function AppInner() {
       <CanvasPanel />
 
       {/* RIGHT: 320px panel */}
-      <div style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--bd)', overflow: 'hidden' }}>
+      <div style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--bd)', overflow: 'hidden', position: 'relative', isolation: 'isolate' }}>
         {/* Metrics always visible */}
         <Metrics />
 
