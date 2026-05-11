@@ -120,13 +120,13 @@ export default function CanvasToolbar({ stageRef, fitBlock }) {
 
       {sep}
 
-      <button title="Zoom out" onClick={() => adjustScale(-2)} style={btn(false)}>
+      <button title="Zoom out" onClick={() => adjustScale(-10)} style={btn(false)}>
         <Minus size={ICON_SIZE} strokeWidth={ICON_SW} />
       </button>
       <span style={{ fontSize: 10, color: 'var(--tx-3)', minWidth: 40, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
         {scale}px/m
       </span>
-      <button title="Zoom in" onClick={() => adjustScale(2)} style={btn(false)}>
+      <button title="Zoom in" onClick={() => adjustScale(10)} style={btn(false)}>
         <Plus size={ICON_SIZE} strokeWidth={ICON_SW} />
       </button>
 

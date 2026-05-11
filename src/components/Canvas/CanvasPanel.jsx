@@ -37,6 +37,7 @@ export default function CanvasPanel() {
     return () => window.removeEventListener('click', dismiss);
   }, [ctxMenu]);
 
+  // Reset View: fit BOTH dimensions so the whole block is visible at once.
   const fitBlock = useCallback(() => {
     const fs = Math.min(
       Math.max(SCALE_MIN, Math.min(SCALE_MAX, (size.w - 2 * BX - 60) / BLOCK.widthM)),
@@ -44,6 +45,13 @@ export default function CanvasPanel() {
     );
     dispatch({ type: 'FIT_BLOCK', scale: fs, panX: 0, panY: 0 });
   }, [size, dispatch]);
+
+  // Fit to width: fills the canvas horizontally for maximum room size;
+  // the block scrolls vertically. Used on initial load.
+  const fitWidth = useCallback((w) => {
+    const fs = Math.max(SCALE_MIN, Math.min(SCALE_MAX, (w - 2 * BX - 60) / BLOCK.widthM));
+    dispatch({ type: 'FIT_BLOCK', scale: fs, panX: 0, panY: 0 });
+  }, [dispatch]);
 
   useEffect(() => {
     if (fitRequested > 0) fitBlock();
@@ -61,11 +69,7 @@ export default function CanvasPanel() {
         setSize({ w, h });
         if (!hasFitRef.current) {
           hasFitRef.current = true;
-          const fs = Math.min(
-            Math.max(SCALE_MIN, Math.min(SCALE_MAX, (w - 2 * BX - 60) / BLOCK.widthM)),
-            Math.max(SCALE_MIN, Math.min(SCALE_MAX, (h - 2 * BY - 40) / BLOCK.depthM)),
-          );
-          dispatch({ type: 'FIT_BLOCK', scale: fs, panX: 0, panY: 0 });
+          fitWidth(w);
         }
       }, 60);
     });
@@ -116,7 +120,7 @@ export default function CanvasPanel() {
 
   function handleWheel(e) {
     e.evt.preventDefault();
-    const delta = e.evt.deltaY > 0 ? -2 : 2;
+    const delta = e.evt.deltaY > 0 ? -6 : 6;
     const next = Math.max(SCALE_MIN, Math.min(SCALE_MAX, scale + delta));
     dispatch({ type: 'SET_SCALE', scale: next });
   }
