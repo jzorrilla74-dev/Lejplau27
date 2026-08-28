@@ -51,13 +51,13 @@ export default function BlockLayer({ stageRef }) {
     });
   }
 
-  // grid dots — visual spacing VISUAL_GRID_M (0.5m)
+  // grid dots — visual spacing VISUAL_GRID_M (0.5m), full block extent
   const gridDots = [];
   if (gridVisible) {
-    const xStart = Math.ceil(setbacks.north / VISUAL_GRID_M) * VISUAL_GRID_M;
+    const xStart = 0;
     const xEnd   = BLOCK.widthM;
-    const yStart = Math.ceil(setbacks.front / VISUAL_GRID_M) * VISUAL_GRID_M;
-    const yEnd   = BLOCK.depthM - setbacks.rear;
+    const yStart = 0;
+    const yEnd   = BLOCK.depthM;
     for (let xm = xStart; xm <= xEnd; xm = +(xm + VISUAL_GRID_M).toFixed(4)) {
       for (let ym = yStart; ym <= yEnd; ym = +(ym + VISUAL_GRID_M).toFixed(4)) {
         gridDots.push(
@@ -106,26 +106,32 @@ export default function BlockLayer({ stageRef }) {
       {/* block fill */}
       <Rect x={BX} y={BY} width={BW} height={BD} fill={blockFill} />
 
-      {/* setback shading */}
+      {/* setback shading — informational only, rooms are not restricted to buildable area */}
       <Rect x={BX} y={BY} width={BW} height={setbacks.front * scale}
         fill={setbackFill} listening={false} />
       <Rect x={BX} y={BY + (BLOCK.depthM - setbacks.rear) * scale} width={BW} height={setbacks.rear * scale}
         fill={setbackFill} listening={false} />
       <Rect x={BX} y={BY} width={setbacks.north * scale} height={BD}
         fill={setbackFill} listening={false} />
+      <Rect x={BX + (BLOCK.widthM - setbacks.south) * scale} y={BY} width={setbacks.south * scale} height={BD}
+        fill={setbackFill} listening={false} />
 
       {/* setback dashed lines */}
       <Line points={[BX, BY + setbacks.front * scale, BX + BW, BY + setbacks.front * scale]}
         stroke={setbackStroke} strokeWidth={1} dash={[4, 4]} listening={false} />
-      <Text x={BX + 4} y={BY + setbacks.front * scale - 12} text="3.5m front setback" fontSize={9} fill={setbackStroke} listening={false} />
+      <Text x={BX + 4} y={BY + setbacks.front * scale - 12} text={`${setbacks.front}m front`} fontSize={9} fill={setbackStroke} listening={false} />
 
       <Line points={[BX, BY + (BLOCK.depthM - setbacks.rear) * scale, BX + BW, BY + (BLOCK.depthM - setbacks.rear) * scale]}
         stroke={setbackStroke} strokeWidth={1} dash={[4, 4]} listening={false} />
-      <Text x={BX + 4} y={BY + (BLOCK.depthM - setbacks.rear) * scale + 2} text="5m rear setback" fontSize={9} fill={setbackStroke} listening={false} />
+      <Text x={BX + 4} y={BY + (BLOCK.depthM - setbacks.rear) * scale + 2} text={`${setbacks.rear}m rear`} fontSize={9} fill={setbackStroke} listening={false} />
 
       <Line points={[BX + setbacks.north * scale, BY, BX + setbacks.north * scale, BY + BD]}
         stroke={setbackStroke} strokeWidth={1} dash={[4, 4]} listening={false} />
       <Text x={BX + setbacks.north * scale + 2} y={BY + 4} text="1m" fontSize={9} fill={setbackStroke} listening={false} />
+
+      <Line points={[BX + (BLOCK.widthM - setbacks.south) * scale, BY, BX + (BLOCK.widthM - setbacks.south) * scale, BY + BD]}
+        stroke={setbackStroke} strokeWidth={1} dash={[4, 4]} listening={false} />
+      <Text x={BX + (BLOCK.widthM - setbacks.south) * scale - 14} y={BY + 4} text="1m" fontSize={9} fill={setbackStroke} listening={false} />
 
       {/* grid dots */}
       {gridDots}

@@ -13,11 +13,12 @@ const HANDLE_SIZE = 8;
 const MIN_ROOM_M = 0.5;
 const SNAP_OBJ_DIST = 0.3;
 
+// Rooms can go anywhere within the full block boundary
 const ENV = {
-  x1: BLOCK.setbacks.north,
+  x1: 0,
   x2: BLOCK.widthM,
-  y1: BLOCK.setbacks.front,
-  y2: BLOCK.depthM - BLOCK.setbacks.rear,
+  y1: 0,
+  y2: BLOCK.depthM,
 };
 
 function hexAlpha(hex, a) {
@@ -31,6 +32,63 @@ function snapTo(val, grid) {
 
 function clamp(val, min, max) {
   return Math.max(min, Math.min(max, val));
+}
+
+const WALL_EPS = 0.005; // 5mm tolerance for shared-wall detection
+
+function uncoveredIntervals(start, end, covered) {
+  let segs = [[start, end]];
+  for (const [cs, ce] of covered) {
+    segs = segs.flatMap(([s, e]) => {
+      if (ce <= s + WALL_EPS || cs >= e - WALL_EPS) return [[s, e]];
+      const out = [];
+      if (cs > s + WALL_EPS) out.push([s, cs]);
+      if (ce < e - WALL_EPS) out.push([ce, e]);
+      return out;
+    });
+  }
+  return segs;
+}
+
+// Returns line segment points [x1,y1,x2,y2] in local pixel coords (origin = room top-left)
+function getExposedWalls(room, allRooms, scale) {
+  const pw = room.w * scale;
+  const pd = room.d * scale;
+  const lines = [];
+
+  // Right wall: local x = pw
+  const rCov = allRooms
+    .filter(r => r.uid !== room.uid && Math.abs(r.x - (room.x + room.w)) < WALL_EPS)
+    .map(r => [Math.max(r.y, room.y), Math.min(r.y + r.d, room.y + room.d)])
+    .filter(([s, e]) => e > s + WALL_EPS);
+  for (const [ys, ye] of uncoveredIntervals(room.y, room.y + room.d, rCov))
+    lines.push([pw, (ys - room.y) * scale, pw, (ye - room.y) * scale]);
+
+  // Left wall: local x = 0
+  const lCov = allRooms
+    .filter(r => r.uid !== room.uid && Math.abs((r.x + r.w) - room.x) < WALL_EPS)
+    .map(r => [Math.max(r.y, room.y), Math.min(r.y + r.d, room.y + room.d)])
+    .filter(([s, e]) => e > s + WALL_EPS);
+  for (const [ys, ye] of uncoveredIntervals(room.y, room.y + room.d, lCov))
+    lines.push([0, (ys - room.y) * scale, 0, (ye - room.y) * scale]);
+
+  // Bottom wall: local y = pd
+  const bCov = allRooms
+    .filter(r => r.uid !== room.uid && Math.abs(r.y - (room.y + room.d)) < WALL_EPS)
+    .map(r => [Math.max(r.x, room.x), Math.min(r.x + r.w, room.x + room.w)])
+    .filter(([s, e]) => e > s + WALL_EPS);
+  for (const [xs, xe] of uncoveredIntervals(room.x, room.x + room.w, bCov))
+    lines.push([(xs - room.x) * scale, pd, (xe - room.x) * scale, pd]);
+
+  // Top wall: local y = 0
+  const tCov = allRooms
+    .filter(r => r.uid !== room.uid && Math.abs((r.y + r.d) - room.y) < WALL_EPS)
+    .map(r => [Math.max(r.x, room.x), Math.min(r.x + r.w, room.x + room.w)])
+    .filter(([s, e]) => e > s + WALL_EPS);
+  for (const [xs, xe] of uncoveredIntervals(room.x, room.x + room.w, tCov))
+    lines.push([(xs - room.x) * scale, 0, (xe - room.x) * scale, 0]);
+
+  return lines;
 }
 
 export default function RoomLayer({ stageRef, setCtxMenu }) {
@@ -336,18 +394,33 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
             x={pw / 2} y={pd / 2}
             radius={Math.min(pw, pd) / 2}
             fill={fillColor}
-            stroke={strokeColor}
+            stroke={isSelected ? (selectedUids.length > 1 ? '#4A9EFF' : '#ffffff') : strokeColor}
             strokeWidth={strokeWidth}
           />
         ) : (
-          <Rect
-            width={pw} height={pd}
-            fill={fillColor}
-            stroke={strokeColor}
-            strokeWidth={isStructural ? 2 : strokeWidth}
-            cornerRadius={isStructural ? 0 : 2}
-            dash={isFurniture ? [4, 3] : isOpening ? [2, 2] : undefined}
-          />
+          <>
+            {/* Fill rect — transparent-safe hit area */}
+            <Rect
+              width={pw} height={pd}
+              fill={fillColor === 'transparent' ? 'rgba(0,0,0,0.001)' : fillColor}
+              cornerRadius={isStructural ? 0 : 2}
+              dash={isFurniture ? [4, 3] : isOpening ? [2, 2] : undefined}
+            />
+            {/* Exposed wall segments only — shared walls suppressed */}
+            {getExposedWalls(room, rooms, scale).map((pts, i) => (
+              <Line key={i} points={pts}
+                stroke={strokeColor}
+                strokeWidth={isStructural ? 2 : strokeWidth}
+                listening={false} />
+            ))}
+            {/* Selection overlay: full outline on top of suppressed walls */}
+            {isSelected && (
+              <Rect width={pw} height={pd}
+                fill="transparent"
+                stroke={selectedUids.length > 1 ? '#4A9EFF' : '#ffffff'}
+                strokeWidth={2} listening={false} />
+            )}
+          </>
         )}
 
         {isActiveLayer && !isSoftscape && (

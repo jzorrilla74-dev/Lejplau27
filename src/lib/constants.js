@@ -1,7 +1,7 @@
 export const BLOCK = {
   widthM: 9.4,
   depthM: 33.5,
-  setbacks: { front: 3.5, rear: 5.0, north: 1.0, south: 0 },
+  setbacks: { front: 4.0, rear: 7.0, north: 1.0, south: 1.0 },
   maxCoverageRatio: 0.60,
   maxFootprintM2: 189,
   partyWall: { startM: 9.37, lengthM: 8.25 },
