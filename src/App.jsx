@@ -34,7 +34,7 @@ function AllProviders({ children }) {
 }
 
 function AppInner() {
-  const { theme, selectedUid, dispatch: cDispatch } = useCanvas();
+  const { theme, selectedUid, selectedUids, dispatch: cDispatch } = useCanvas();
   const { dispatch: lDispatch, rooms, partyWallStartM } = useLayout();
   const { layers, dispatch: layDispatch } = useLayers();
   const { state: brief, dispatch: bDispatch } = useBrief();
@@ -94,20 +94,25 @@ function AppInner() {
         e.preventDefault();
         return;
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedUid && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-        lDispatch({ type: 'REMOVE_ROOM', uid: selectedUid });
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedUids.length > 0 && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        selectedUids.forEach(uid => lDispatch({ type: 'REMOVE_ROOM', uid }));
         cDispatch({ type: 'DESELECT' });
         return;
       }
       if (meta && e.key === 'd') {
         e.preventDefault();
-        if (selectedUid) {
-          const src = rooms.find(r => r.uid === selectedUid);
-          if (src) {
-            const dup = { ...src, uid: uuidv4(), x: src.x + 0.5, y: src.y + 0.5 };
-            lDispatch({ type: 'ADD_ROOM', room: dup });
-            cDispatch({ type: 'SELECT_ROOM', uid: dup.uid });
-          }
+        if (selectedUids.length > 0) {
+          const newUids = [];
+          selectedUids.forEach(uid => {
+            const src = rooms.find(r => r.uid === uid);
+            if (src) {
+              const newUid = uuidv4();
+              lDispatch({ type: 'ADD_ROOM', room: { ...src, uid: newUid, x: src.x + 0.5, y: src.y + 0.5 } });
+              newUids.push(newUid);
+            }
+          });
+          if (newUids.length === 1) cDispatch({ type: 'SELECT_ROOM', uid: newUids[0] });
+          else if (newUids.length > 1) cDispatch({ type: 'SELECT_ROOMS', uids: newUids });
         }
         return;
       }

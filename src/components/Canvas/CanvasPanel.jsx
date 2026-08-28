@@ -26,10 +26,13 @@ export default function CanvasPanel() {
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ clientX: 0, clientY: 0, panX: 0, panY: 0 });
   // Start with a reasonable default; ResizeObserver corrects it on first paint.
+  const selBoxStartRef = useRef(null);
+  const wasRubberBandRef = useRef(false);
   const [size, setSize] = useState({ w: 800, h: 600 });
   const [ctxMenu, setCtxMenu] = useState(null);
+  const [selBox, setSelBox] = useState(null);
   const { scale, panX, panY, activeTool, fitRequested, dispatch } = useCanvas();
-  const { dispatch: lDispatch } = useLayout();
+  const { rooms, dispatch: lDispatch } = useLayout();
 
   useEffect(() => {
     if (!ctxMenu) return;
@@ -93,25 +96,61 @@ export default function CanvasPanel() {
   }
 
   function handleStagePointerDown(e) {
-    if (activeTool !== 'pan') return;
-    isPanningRef.current = true;
-    panStartRef.current = { clientX: e.evt.clientX, clientY: e.evt.clientY, panX, panY };
+    if (activeTool === 'pan') {
+      isPanningRef.current = true;
+      panStartRef.current = { clientX: e.evt.clientX, clientY: e.evt.clientY, panX, panY };
+      return;
+    }
+    if (activeTool === 'select' && e.target === e.target.getStage()) {
+      const stage = stageRef.current;
+      const pos = stage.getPointerPosition();
+      selBoxStartRef.current = { x: pos.x, y: pos.y };
+    }
   }
 
   function handleStagePointerMove(e) {
-    if (!isPanningRef.current) return;
-    const dx = e.evt.clientX - panStartRef.current.clientX;
-    const dy = e.evt.clientY - panStartRef.current.clientY;
-    const { x, y } = clampPan(panStartRef.current.panX + dx, panStartRef.current.panY + dy);
-    dispatch({ type: 'SET_PAN', panX: x, panY: y });
+    if (isPanningRef.current) {
+      const dx = e.evt.clientX - panStartRef.current.clientX;
+      const dy = e.evt.clientY - panStartRef.current.clientY;
+      const { x, y } = clampPan(panStartRef.current.panX + dx, panStartRef.current.panY + dy);
+      dispatch({ type: 'SET_PAN', panX: x, panY: y });
+      return;
+    }
+    if (selBoxStartRef.current) {
+      const stage = stageRef.current;
+      const pos = stage.getPointerPosition();
+      const dx = pos.x - selBoxStartRef.current.x;
+      const dy = pos.y - selBoxStartRef.current.y;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        setSelBox({ x: selBoxStartRef.current.x, y: selBoxStartRef.current.y, w: dx, h: dy });
+      }
+    }
   }
 
   function handleStagePointerUp() {
     isPanningRef.current = false;
+    if (selBox) {
+      wasRubberBandRef.current = true;
+      const selLeft   = Math.min(selBox.x, selBox.x + selBox.w);
+      const selRight  = Math.max(selBox.x, selBox.x + selBox.w);
+      const selTop    = Math.min(selBox.y, selBox.y + selBox.h);
+      const selBottom = Math.max(selBox.y, selBox.y + selBox.h);
+      const hit = rooms.filter(r => {
+        const rLeft   = panX + BX + r.x * scale;
+        const rRight  = panX + BX + (r.x + r.w) * scale;
+        const rTop    = panY + BY + r.y * scale;
+        const rBottom = panY + BY + (r.y + r.d) * scale;
+        return rLeft < selRight && rRight > selLeft && rTop < selBottom && rBottom > selTop;
+      });
+      if (hit.length > 0) dispatch({ type: 'SELECT_ROOMS', uids: hit.map(r => r.uid) });
+      setSelBox(null);
+    }
+    selBoxStartRef.current = null;
   }
 
   function handleStageClick(e) {
     if (activeTool === 'pan') return;
+    if (wasRubberBandRef.current) { wasRubberBandRef.current = false; return; }
     if (e.target === e.target.getStage()) dispatch({ type: 'DESELECT' });
   }
 
@@ -161,6 +200,19 @@ export default function CanvasPanel() {
           <BlockLayer stageRef={stageRef} />
           <RoomLayer stageRef={stageRef} setCtxMenu={setCtxMenu} />
         </Stage>
+
+        {selBox && (
+          <div style={{
+            position: 'absolute',
+            left: Math.min(selBox.x, selBox.x + selBox.w),
+            top:  Math.min(selBox.y, selBox.y + selBox.h),
+            width: Math.abs(selBox.w),
+            height: Math.abs(selBox.h),
+            border: '1px dashed #4A9EFF',
+            background: 'rgba(74,158,255,0.08)',
+            pointerEvents: 'none',
+          }} />
+        )}
 
         {ctxMenu && (
           <div

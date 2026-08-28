@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { Layer, Group, Rect, Text, Circle, Line } from 'react-konva';
 import { CAT_STYLES } from '../../lib/roomDefaults';
 import { BLOCK, GRID_M, FINE_GRID_M } from '../../lib/constants';
@@ -34,10 +34,13 @@ function clamp(val, min, max) {
 }
 
 export default function RoomLayer({ stageRef, setCtxMenu }) {
-  const { scale, selectedUid, theme, snapEnabled, dispatch: cDispatch } = useCanvas();
+  const { scale, selectedUid, selectedUids, theme, snapEnabled, dispatch: cDispatch } = useCanvas();
   const { rooms, partyWallStartM, dispatch: lDispatch } = useLayout();
   const { layers, activeLayerId } = useLayers();
   const [snapGuides, setSnapGuides] = useState({ x: [], y: [] });
+  const [multiDragDelta, setMultiDragDelta] = useState({ dx: 0, dy: 0 });
+  const draggedUidRef = useRef(null);
+  const multiDragStartRef = useRef({});
 
   const BX = RULER_PX + MARGIN;
   const BY = RULER_PX + MARGIN;
@@ -59,7 +62,15 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
 
   function handleDragStart(e, room) {
     if (room.locked) return e.target.stopDrag();
-    cDispatch({ type: 'SELECT_ROOM', uid: room.uid });
+    draggedUidRef.current = room.uid;
+    if (selectedUids.length > 1 && selectedUids.includes(room.uid)) {
+      const starts = {};
+      for (const uid of selectedUids) {
+        const r = rooms.find(r2 => r2.uid === uid);
+        if (r) starts[uid] = { x: r.x, y: r.y };
+      }
+      multiDragStartRef.current = starts;
+    }
   }
 
   function handleDragMove(e, room) {
@@ -127,16 +138,39 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
     // node.x/y is GROUP CENTER (offsetX/offsetY) — add half-size back
     node.x(BX + cx * scale + pw / 2);
     node.y(BY + cy * scale + pd / 2);
+
+    // Multi-drag: track the delta so non-dragged selected rooms follow
+    if (selectedUids.length > 1 && selectedUids.includes(room.uid)) {
+      const startPos = multiDragStartRef.current[room.uid];
+      if (startPos) setMultiDragDelta({ dx: cx - startPos.x, dy: cy - startPos.y });
+    }
   }
 
   function handleDragEnd(e, room) {
     const node = e.target;
     const pw = room.w * scale;
     const pd = room.d * scale;
-    // node.x/y is center; subtract half-size to recover top-left
     const xm = +(Math.round((node.x() - pw / 2 - BX) / scale / GRID_M) * GRID_M).toFixed(3);
     const ym = +(Math.round((node.y() - pd / 2 - BY) / scale / GRID_M) * GRID_M).toFixed(3);
     lDispatch({ type: 'UPDATE_ROOM', uid: room.uid, patch: { x: xm, y: ym } });
+
+    // Commit all other selected rooms at their offset positions
+    if (selectedUids.length > 1 && selectedUids.includes(room.uid)) {
+      const { dx, dy } = multiDragDelta;
+      for (const uid of selectedUids) {
+        if (uid === room.uid) continue;
+        const start = multiDragStartRef.current[uid];
+        if (!start) continue;
+        lDispatch({ type: 'UPDATE_ROOM', uid, patch: {
+          x: +(start.x + dx).toFixed(3),
+          y: +(start.y + dy).toFixed(3),
+        }});
+      }
+      setMultiDragDelta({ dx: 0, dy: 0 });
+      multiDragStartRef.current = {};
+    }
+
+    draggedUidRef.current = null;
     setSnapGuides({ x: [], y: [] });
   }
 
@@ -205,7 +239,8 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
 
   function renderRoom(room) {
     const catStyle      = CAT_STYLES[room.category] || CAT_STYLES.service;
-    const isSelected    = selectedUid === room.uid;
+    const isSelected    = selectedUids.includes(room.uid);
+    const isOnlySelected = isSelected && selectedUids.length === 1;
     const hasWarning    = warnUids.has(room.uid);
     const hasOverlap    = overlapUids.has(room.uid);
     const layer         = layers.find(l => l.id === room.layerId);
@@ -217,15 +252,22 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
     const structuralFill = theme === 'dark' ? '#222222' : '#888888';
     const layerOpacity  = isActiveLayer ? 1.0 : (layer?.opacity ?? 1) * 0.85;
 
-    const px = BX + room.x * scale;
-    const py = BY + room.y * scale;
+    // During multi-drag, non-dragged selected rooms follow the dragged room's delta
+    const isBeingDragged = room.uid === draggedUidRef.current;
+    const extraPx = (!isBeingDragged && isSelected && selectedUids.length > 1)
+      ? multiDragDelta.dx * scale : 0;
+    const extraPy = (!isBeingDragged && isSelected && selectedUids.length > 1)
+      ? multiDragDelta.dy * scale : 0;
+
+    const px = BX + room.x * scale + extraPx;
+    const py = BY + room.y * scale + extraPy;
     const pw = room.w * scale;
     const pd = room.d * scale;
 
     let strokeColor = catStyle.stroke;
     if (hasOverlap) strokeColor = '#f0c040';
     else if (hasWarning) strokeColor = '#f08020';
-    if (isSelected) strokeColor = '#ffffff';
+    if (isSelected) strokeColor = selectedUids.length > 1 ? '#4A9EFF' : '#ffffff';
 
     const strokeWidth = isSelected ? 2 : 1.5;
     const showLabel   = pw > 20 && pd > 20;
@@ -273,8 +315,14 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
         offsetX={pw / 2} offsetY={pd / 2}
         rotation={room.rotation ?? 0}
         opacity={layerOpacity}
-        draggable={isRoomDraggable(room)}
-        onPointerDown={() => cDispatch({ type: 'SELECT_ROOM', uid: room.uid })}
+        draggable={isRoomDraggable(room) && !(!isBeingDragged && draggedUidRef.current !== null)}
+        onPointerDown={e => {
+          if (e.evt.shiftKey) {
+            cDispatch({ type: 'SHIFT_SELECT', uid: room.uid });
+          } else if (!selectedUids.includes(room.uid)) {
+            cDispatch({ type: 'SELECT_ROOM', uid: room.uid });
+          }
+        }}
         onDragStart={e => handleDragStart(e, room)}
         onDragMove={e => handleDragMove(e, room)}
         onDragEnd={e => handleDragEnd(e, room)}
@@ -332,7 +380,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
           </>
         )}
 
-        {isSelected && !room.locked && (
+        {isOnlySelected && !room.locked && (
           <>
             {[
               { id: 'nw', hx: 0,    hy: 0    },

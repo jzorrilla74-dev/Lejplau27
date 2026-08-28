@@ -10,6 +10,7 @@ const INITIAL = {
   snapEnabled: true,
   theme: 'dark',
   selectedUid: null,
+  selectedUids: [],
   fitRequested: 0,
 };
 
@@ -23,8 +24,16 @@ function reducer(state, action) {
     case 'TOGGLE_GRID':  return { ...state, gridVisible: !state.gridVisible };
     case 'TOGGLE_SNAP':  return { ...state, snapEnabled: !state.snapEnabled };
     case 'TOGGLE_THEME': return { ...state, theme: state.theme === 'dark' ? 'light' : 'dark' };
-    case 'SELECT_ROOM':  return { ...state, selectedUid: action.uid };
-    case 'DESELECT':     return { ...state, selectedUid: null };
+    case 'SELECT_ROOM':  return { ...state, selectedUid: action.uid, selectedUids: [action.uid] };
+    case 'SHIFT_SELECT': {
+      const has = state.selectedUids.includes(action.uid);
+      const next = has
+        ? state.selectedUids.filter(u => u !== action.uid)
+        : [...state.selectedUids, action.uid];
+      return { ...state, selectedUids: next, selectedUid: next.at(-1) ?? null };
+    }
+    case 'SELECT_ROOMS': return { ...state, selectedUids: action.uids, selectedUid: action.uids.at(-1) ?? null };
+    case 'DESELECT':     return { ...state, selectedUid: null, selectedUids: [] };
     default:             return state;
   }
 }
