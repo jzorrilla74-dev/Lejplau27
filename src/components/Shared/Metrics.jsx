@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLayout } from '../../context/LayoutContext';
 import { useBrief } from '../../context/BriefContext';
 import { checkConstraints } from '../../lib/constraints';
@@ -5,6 +6,7 @@ import { checkMelbourneCompliance } from '../../lib/melbourneRegs';
 import { BLOCK } from '../../lib/constants';
 
 export default function Metrics() {
+  const [open, setOpen] = useState(false);
   const { rooms, partyWallStartM } = useLayout();
   const { state: brief } = useBrief();
   const warnings = checkConstraints(rooms, BLOCK);
@@ -40,7 +42,21 @@ export default function Metrics() {
   const compWarnings = compliance.filter(w => w.severity === 'warning');
 
   return (
-    <div style={{ padding: '8px', background: 'var(--bg2)', borderBottom: '1px solid var(--bd)', fontSize: 11 }}>
+    <div style={{ background: 'var(--bg2)', borderBottom: '1px solid var(--bd)', fontSize: 11 }}>
+      {/* collapse header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '5px 8px', background: 'none', border: 'none', cursor: 'pointer',
+          color: 'var(--tx2)', fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase',
+        }}
+      >
+        <span>Metrics</span>
+        <span>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && <div style={{ padding: '0 8px 8px' }}>
       {/* footprint bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
         <span style={{ color: 'var(--tx2)' }}>Footprint</span>
@@ -120,6 +136,7 @@ export default function Metrics() {
           ))}
         </div>
       )}
+      </div>}
     </div>
   );
 }

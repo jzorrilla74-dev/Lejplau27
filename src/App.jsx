@@ -40,7 +40,6 @@ function AppInner() {
   const { state: brief, dispatch: bDispatch } = useBrief();
   const { setStatus, setLastSaved } = useFirestoreStatus();
   const [rightTab, setRightTab] = useState('rooms');
-  const [rightOpen, setRightOpen] = useState(false);
   const [briefOpen, setBriefOpen] = useState(() => localStorage.getItem('brief_open') !== 'false');
   const saveTimerRef = useRef(null);
   const pendingRef = useRef(false);
@@ -149,42 +148,27 @@ function AppInner() {
       {/* CENTRE: Canvas */}
       <CanvasPanel />
 
-      {/* RIGHT: collapsible panel */}
-      <div style={{ display: 'flex', flexShrink: 0, borderLeft: '1px solid var(--bd)', position: 'relative', isolation: 'isolate' }}>
-        {/* Toggle strip */}
-        <button
-          onClick={() => setRightOpen(o => !o)}
-          title={rightOpen ? 'Collapse panel' : 'Expand panel'}
-          style={{
-            width: 18, flexShrink: 0, border: 'none', borderRight: '1px solid var(--bd)',
-            background: 'var(--bg2)', color: 'var(--tx2)', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 10, letterSpacing: 0,
-          }}
-        >
-          {rightOpen ? '›' : '‹'}
-        </button>
+      {/* RIGHT: 320px panel */}
+      <div style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--bd)', overflow: 'hidden', position: 'relative', isolation: 'isolate' }}>
+        {/* Metrics — collapsible, collapsed by default */}
+        <Metrics />
 
-        {/* Panel body */}
-        {rightOpen && (
-          <div style={{ width: 320, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Metrics />
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--bd)' }}>
-              <button style={tabBtnStyle(rightTab === 'rooms')} onClick={() => setRightTab('rooms')}>Rooms</button>
-              <button style={tabBtnStyle(rightTab === 'critic')} onClick={() => setRightTab('critic')}>Critic</button>
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--bd)' }}>
+          <button style={tabBtnStyle(rightTab === 'rooms')} onClick={() => setRightTab('rooms')}>Rooms</button>
+          <button style={tabBtnStyle(rightTab === 'critic')} onClick={() => setRightTab('critic')}>Critic</button>
+        </div>
+
+        {rightTab === 'rooms' ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <Palette />
             </div>
-            {rightTab === 'rooms' ? (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <Palette />
-                </div>
-                {selectedUid && <Inspector />}
-              </div>
-            ) : (
-              <div style={{ flex: 1, overflow: 'hidden' }}>
-                <CriticPanel />
-              </div>
-            )}
+            {selectedUid && <Inspector />}
+          </div>
+        ) : (
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <CriticPanel />
           </div>
         )}
       </div>
