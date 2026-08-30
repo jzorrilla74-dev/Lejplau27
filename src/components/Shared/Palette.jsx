@@ -5,10 +5,12 @@ import { BLOCK } from '../../lib/constants';
 import { useLayout } from '../../context/LayoutContext';
 import { useLayers } from '../../context/LayerContext';
 import { useBrief } from '../../context/BriefContext';
+import { useCanvas } from '../../context/CanvasContext';
 
-// Initial placement point inside buildable envelope
-const PLACE_X = BLOCK.setbacks.north + 0.5;
-const PLACE_Y = BLOCK.setbacks.front + 0.5;
+const RULER_PX = 20;
+const MARGIN = 8;
+const BX = RULER_PX + MARGIN;
+const BY = RULER_PX + MARGIN;
 
 export default function Palette() {
   const [openGroup, setOpenGroup] = useState('sleeping');
@@ -16,20 +18,35 @@ export default function Palette() {
   const { dispatch } = useLayout();
   const { activeLayerId } = useLayers();
   const { state: brief } = useBrief();
+  const { panX, panY, scale } = useCanvas();
 
   const essentialNames = new Set(
     brief.programme.filter(p => p.checked && p.priority === 'essential').map(p => p.name.toLowerCase())
   );
 
+  function visibleCentre(w, d) {
+    const stageEl = document.querySelector('.konvajs-content');
+    const rect = stageEl?.getBoundingClientRect();
+    const canvasW = rect?.width ?? 600;
+    const canvasH = rect?.height ?? 800;
+    const xm = (-panX + canvasW / 2 - BX) / scale - w / 2;
+    const ym = (-panY + canvasH / 2 - BY) / scale - d / 2;
+    return {
+      x: +Math.max(0, Math.min(BLOCK.widthM - w, xm)).toFixed(2),
+      y: +Math.max(0, Math.min(BLOCK.depthM - d, ym)).toFixed(2),
+    };
+  }
+
   function addRoom(def) {
+    const { x, y } = visibleCentre(def.w, def.d);
     dispatch({
       type: 'ADD_ROOM',
       room: {
         uid: uuidv4(),
         defId: def.defId,
         label: def.label,
-        x: PLACE_X,
-        y: PLACE_Y,
+        x,
+        y,
         w: def.w,
         d: def.d,
         rotation: 0,
