@@ -42,6 +42,7 @@ const defs = [
   { defId: 'butlers_pantry',  label: "Butler's Pantry", w: 1.8, d: 2.5, category: 'social' },
   { defId: 'theatre',         label: 'Theatre',         w: 4.0, d: 4.5, category: 'social' },
   { defId: 'library',         label: 'Library',         w: 3.0, d: 4.0, category: 'social' },
+  { defId: 'sauna',           label: 'Sauna',           w: 2.0, d: 2.4, category: 'social' },
   // outdoor
   { defId: 'courtyard',       label: 'Courtyard',       w: 6.0, d: 5.5, category: 'outdoor' },
   { defId: 'courtyard_open',  label: 'Courtyard Open',  w: 5.0, d: 5.0, category: 'outdoor' },
