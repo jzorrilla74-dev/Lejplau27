@@ -28,9 +28,11 @@ export default function CanvasPanel() {
   // Start with a reasonable default; ResizeObserver corrects it on first paint.
   const selBoxStartRef = useRef(null);
   const wasRubberBandRef = useRef(false);
+  const lassoActiveRef = useRef(false);
   const [size, setSize] = useState({ w: 800, h: 600 });
   const [ctxMenu, setCtxMenu] = useState(null);
   const [selBox, setSelBox] = useState(null);
+  const [lassoPoints, setLassoPoints] = useState(null);
   const { scale, panX, panY, activeTool, fitRequested, dispatch } = useCanvas();
   const { rooms, dispatch: lDispatch } = useLayout();
 
@@ -95,10 +97,28 @@ export default function CanvasPanel() {
     };
   }
 
+  function pointInPolygon(px, py, poly) {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const xi = poly[i].x, yi = poly[i].y;
+      const xj = poly[j].x, yj = poly[j].y;
+      if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+
   function handleStagePointerDown(e) {
     if (activeTool === 'pan') {
       isPanningRef.current = true;
       panStartRef.current = { clientX: e.evt.clientX, clientY: e.evt.clientY, panX, panY };
+      return;
+    }
+    if (activeTool === 'lasso') {
+      const pos = stageRef.current.getPointerPosition();
+      lassoActiveRef.current = true;
+      setLassoPoints([{ x: pos.x, y: pos.y }]);
       return;
     }
     if (activeTool === 'select' && e.target === e.target.getStage()) {
@@ -116,6 +136,17 @@ export default function CanvasPanel() {
       dispatch({ type: 'SET_PAN', panX: x, panY: y });
       return;
     }
+    if (lassoActiveRef.current) {
+      const pos = stageRef.current.getPointerPosition();
+      setLassoPoints(pts => {
+        if (!pts || pts.length === 0) return [{ x: pos.x, y: pos.y }];
+        const last = pts[pts.length - 1];
+        const dx = pos.x - last.x, dy = pos.y - last.y;
+        if (dx * dx + dy * dy < 9) return pts;
+        return [...pts, { x: pos.x, y: pos.y }];
+      });
+      return;
+    }
     if (selBoxStartRef.current) {
       const stage = stageRef.current;
       const pos = stage.getPointerPosition();
@@ -129,6 +160,22 @@ export default function CanvasPanel() {
 
   function handleStagePointerUp() {
     isPanningRef.current = false;
+    if (lassoActiveRef.current) {
+      lassoActiveRef.current = false;
+      setLassoPoints(pts => {
+        if (pts && pts.length >= 3) {
+          const hit = rooms.filter(r => {
+            const cx = panX + BX + (r.x + r.w / 2) * scale;
+            const cy = panY + BY + (r.y + r.d / 2) * scale;
+            return pointInPolygon(cx, cy, pts);
+          });
+          if (hit.length > 0) dispatch({ type: 'SELECT_ROOMS', uids: hit.map(r => r.uid) });
+        }
+        return null;
+      });
+      dispatch({ type: 'SET_TOOL', tool: 'select' });
+      return;
+    }
     if (selBox) {
       wasRubberBandRef.current = true;
       const selLeft   = Math.min(selBox.x, selBox.x + selBox.w);
@@ -195,7 +242,7 @@ export default function CanvasPanel() {
           onClick={handleStageClick}
           onDblClick={handleStageDblClick}
           onWheel={handleWheel}
-          style={{ cursor: activeTool === 'pan' ? 'grab' : 'default', display: 'block' }}
+          style={{ cursor: activeTool === 'pan' ? 'grab' : activeTool === 'lasso' ? 'crosshair' : 'default', display: 'block' }}
         >
           <BlockLayer stageRef={stageRef} />
           <RoomLayer stageRef={stageRef} setCtxMenu={setCtxMenu} />
@@ -212,6 +259,28 @@ export default function CanvasPanel() {
             background: 'rgba(74,158,255,0.08)',
             pointerEvents: 'none',
           }} />
+        )}
+
+        {lassoPoints && lassoPoints.length >= 2 && (
+          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+            <polyline
+              points={lassoPoints.map(p => `${p.x},${p.y}`).join(' ')}
+              fill="rgba(74,158,255,0.1)"
+              stroke="#4A9EFF"
+              strokeWidth={1.5}
+              strokeDasharray="5,3"
+            />
+            <line
+              x1={lassoPoints[lassoPoints.length - 1].x}
+              y1={lassoPoints[lassoPoints.length - 1].y}
+              x2={lassoPoints[0].x}
+              y2={lassoPoints[0].y}
+              stroke="#4A9EFF"
+              strokeWidth={1}
+              strokeDasharray="3,4"
+              opacity={0.5}
+            />
+          </svg>
         )}
 
         {ctxMenu && (

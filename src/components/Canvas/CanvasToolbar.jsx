@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   MousePointer2, Hand, Undo2, Redo2, Minus, Plus,
   Grid3x3, Sun, Moon, Layers, Save, Upload, ImageDown,
-  Home, Square, Magnet, History,
+  Home, Square, Magnet, History, LassoSelect,
 } from 'lucide-react';
 import { useCanvas } from '../../context/CanvasContext';
 import { useLayout } from '../../context/LayoutContext';
@@ -136,6 +136,9 @@ export default function CanvasToolbar({ stageRef, fitBlock }) {
       <button title="Pan (H)" onClick={() => dispatch({ type: 'SET_TOOL', tool: 'pan' })} style={btn(activeTool === 'pan')}>
         <Hand size={ICON_SIZE} strokeWidth={ICON_SW} />
       </button>
+      <button title="Lasso (L)" onClick={() => dispatch({ type: 'SET_TOOL', tool: 'lasso' })} style={btn(activeTool === 'lasso')}>
+        <LassoSelect size={ICON_SIZE} strokeWidth={ICON_SW} />
+      </button>
 
       {sep}
 
@@ -147,7 +150,7 @@ export default function CanvasToolbar({ stageRef, fitBlock }) {
         style={{ ...btn(false), opacity: canRedo ? 1 : 0.35 }}>
         <Redo2 size={ICON_SIZE} strokeWidth={ICON_SW} />
       </button>
-      <button title="Reset View (ↈ0)" onClick={fitBlock} style={btn(false)}>
+      <button title="Reset View (⌘0)" onClick={fitBlock} style={btn(false)}>
         <Home size={ICON_SIZE} strokeWidth={ICON_SW} />
       </button>
 
