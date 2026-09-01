@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   MousePointer2, Hand, Undo2, Redo2, Minus, Plus,
   Grid3x3, Sun, Moon, Layers, Save, Upload, ImageDown,
-  Home, Square, Magnet,
+  Home, Square, Magnet, History,
 } from 'lucide-react';
 import { useCanvas } from '../../context/CanvasContext';
 import { useLayout } from '../../context/LayoutContext';
@@ -13,6 +13,7 @@ import { saveJSON } from '../../lib/exportJSON';
 import { exportSVG } from '../../lib/exportSVG';
 import { exportDXF } from '../../lib/exportDXF';
 import { parseImportedJSON } from '../../lib/importJSON';
+import { saveVersion, listVersions, deleteVersion } from '../../lib/versions';
 import { SCALE_MIN, SCALE_MAX } from '../../lib/constants';
 import LayerPanel from './LayerPanel';
 
@@ -28,10 +29,42 @@ function formatAgo(d) {
 export default function CanvasToolbar({ stageRef, fitBlock }) {
   const { scale, activeTool, gridVisible, snapEnabled, theme, dispatch } = useCanvas();
   const { status: saveStatus, lastSaved } = useFirestoreStatus();
-  const { rooms, dispatch: lDispatch, undo, redo, canUndo, canRedo } = useLayout();
+  const { rooms, partyWallStartM, dispatch: lDispatch, undo, redo, canUndo, canRedo } = useLayout();
   const { layers } = useLayers();
   const { state: brief } = useBrief();
   const [showLayers, setShowLayers] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
+  const [versions, setVersions] = useState(() => listVersions());
+  const versionsRef = useRef(null);
+
+  useEffect(() => {
+    if (!showVersions) return;
+    setVersions(listVersions());
+    function onOutside(e) {
+      if (versionsRef.current && !versionsRef.current.contains(e.target)) setShowVersions(false);
+    }
+    window.addEventListener('mousedown', onOutside);
+    return () => window.removeEventListener('mousedown', onOutside);
+  }, [showVersions]);
+
+  function handleSaveVersion() {
+    const name = prompt('Version name:', new Date().toLocaleString());
+    if (!name) return;
+    saveVersion(name, rooms, partyWallStartM);
+    setVersions(listVersions());
+    setShowVersions(true);
+  }
+
+  function handleRestoreVersion(v) {
+    if (!confirm(`Restore "${v.name}"? Current layout will be replaced.`)) return;
+    lDispatch({ type: 'LOAD_LAYOUT', rooms: v.rooms, partyWallStartM: v.partyWallStartM });
+    setShowVersions(false);
+  }
+
+  function handleDeleteVersion(id) {
+    deleteVersion(id);
+    setVersions(listVersions());
+  }
 
   const placedEssential = (() => {
     const essentials = brief.programme.filter(p => p.checked && p.priority === 'essential');
@@ -114,7 +147,7 @@ export default function CanvasToolbar({ stageRef, fitBlock }) {
         style={{ ...btn(false), opacity: canRedo ? 1 : 0.35 }}>
         <Redo2 size={ICON_SIZE} strokeWidth={ICON_SW} />
       </button>
-      <button title="Reset View (⌘0)" onClick={fitBlock} style={btn(false)}>
+      <button title="Reset View (ↈ0)" onClick={fitBlock} style={btn(false)}>
         <Home size={ICON_SIZE} strokeWidth={ICON_SW} />
       </button>
 
@@ -154,6 +187,54 @@ export default function CanvasToolbar({ stageRef, fitBlock }) {
           <Layers size={ICON_SIZE} strokeWidth={ICON_SW} />
         </button>
         {showLayers && <LayerPanel onClose={() => setShowLayers(false)} />}
+      </div>
+
+      <div style={{ position: 'relative' }} ref={versionsRef}>
+        <button title="Versions" onClick={() => setShowVersions(s => !s)} style={btn(showVersions)}>
+          <History size={ICON_SIZE} strokeWidth={ICON_SW} />
+        </button>
+        {showVersions && (
+          <div style={{
+            position: 'absolute', top: 32, right: 0, zIndex: 200,
+            width: 260, background: 'var(--bg-1)', border: '1px solid var(--bd)',
+            borderRadius: 6, boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: '1px solid var(--bd)' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx)' }}>Saved Versions</span>
+              <button onClick={handleSaveVersion} style={{
+                fontSize: 10, padding: '3px 8px', background: 'var(--accent)',
+                color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer',
+              }}>+ Save now</button>
+            </div>
+            {versions.length === 0 ? (
+              <div style={{ padding: '12px 10px', fontSize: 11, color: 'var(--tx-3)', textAlign: 'center' }}>
+                No saved versions yet
+              </div>
+            ) : (
+              <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                {versions.map(v => (
+                  <div key={v.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '6px 10px', borderBottom: '1px solid var(--bd)',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, color: 'var(--tx)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.name}</div>
+                      <div style={{ fontSize: 9, color: 'var(--tx-3)' }}>{new Date(v.savedAt).toLocaleString()} · {v.rooms.length} rooms</div>
+                    </div>
+                    <button onClick={() => handleRestoreVersion(v)} style={{
+                      fontSize: 9, padding: '2px 6px', background: 'var(--bg-2)',
+                      color: 'var(--tx)', border: '1px solid var(--bd)', borderRadius: 3, cursor: 'pointer', flexShrink: 0,
+                    }}>Restore</button>
+                    <button onClick={() => handleDeleteVersion(v.id)} style={{
+                      fontSize: 9, padding: '2px 6px', background: 'transparent',
+                      color: 'var(--red)', border: '1px solid var(--bd)', borderRadius: 3, cursor: 'pointer', flexShrink: 0,
+                    }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {sep}
