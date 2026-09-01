@@ -97,6 +97,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
   const { layers, activeLayerId } = useLayers();
   const [snapGuides, setSnapGuides] = useState({ x: [], y: [] });
   const [multiDragDelta, setMultiDragDelta] = useState({ dx: 0, dy: 0 });
+  const multiDragDeltaRef = useRef({ dx: 0, dy: 0 });
   const draggedUidRef = useRef(null);
   const multiDragStartRef = useRef({});
 
@@ -200,7 +201,11 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
     // Multi-drag: track the delta so non-dragged selected rooms follow
     if (selectedUids.length > 1 && selectedUids.includes(room.uid)) {
       const startPos = multiDragStartRef.current[room.uid];
-      if (startPos) setMultiDragDelta({ dx: cx - startPos.x, dy: cy - startPos.y });
+      if (startPos) {
+        const delta = { dx: cx - startPos.x, dy: cy - startPos.y };
+        multiDragDeltaRef.current = delta;
+        setMultiDragDelta(delta);
+      }
     }
   }
 
@@ -214,7 +219,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
 
     // Commit all other selected rooms at their offset positions
     if (selectedUids.length > 1 && selectedUids.includes(room.uid)) {
-      const { dx, dy } = multiDragDelta;
+      const { dx, dy } = multiDragDeltaRef.current;
       for (const uid of selectedUids) {
         if (uid === room.uid) continue;
         const start = multiDragStartRef.current[uid];
@@ -224,6 +229,7 @@ export default function RoomLayer({ stageRef, setCtxMenu }) {
           y: +(start.y + dy).toFixed(3),
         }});
       }
+      multiDragDeltaRef.current = { dx: 0, dy: 0 };
       setMultiDragDelta({ dx: 0, dy: 0 });
       multiDragStartRef.current = {};
     }
